@@ -10,8 +10,8 @@ from fastapi.security import (
 from sqlalchemy.orm import Session
 
 from src.database.db import get_db
-from src.database.models import Role
-from src.repository.users import get_current_user, check_user_role, allowed_roles
+from src.database.models import Role, User
+from src.repository.users import get_current_user
 from src.schemas import UserDetailedResponse, Roles
 from src.repository import users as repository_users
 from src.conf.config import settings
@@ -26,15 +26,15 @@ r = redis.Redis(host=settings.redis_host, port=settings.redis_port)
     "/{user_name}",
     response_model=Optional[UserDetailedResponse],
 )
-@allowed_roles(["admin"])
 async def get_user_info(
     user_name: str,
     db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
 ):
     """
     Method that returns the full user info for the specific user.
-    :param check_role: Check user role.
-    :type check_role: bool.
+    :param _: Authorized user.
+    :type _: User.
     :param user_name: User name.
     :type user_name: str.
     :param db: DB session object.
@@ -45,7 +45,7 @@ async def get_user_info(
     user, uploaded_photos = await repository_users.get_full_user_info_by_name(
         user_name=user_name, db=db
     )
-    role: Type[Role] = await repository_users.get_user_role(user_id=user.id)
+    role: Type[Role] = await repository_users.get_user_role(user_id=user.id, db=db)
     return UserDetailedResponse(
         id=user.id,
         is_active=user.is_active,
