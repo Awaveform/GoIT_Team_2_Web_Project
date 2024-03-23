@@ -39,7 +39,7 @@ async def get_role(_role: Roles, db: Session) -> Type[Role]:
     return role
 
 
-async def get_user_role(user_id: int, db: Session) -> Type[Role]:
+async def get_user_role(user_id: int, db: Session = Depends(get_db)) -> Type[Role]:
     """
     Method that gets information about the user role.
 
