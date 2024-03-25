@@ -76,15 +76,15 @@ async def signup(
     response_model=Optional[TokenModelResponse],
 )
 async def create_session(
-    user: TokenModel, Authorize: AuthJWT = Depends(), db: Session = Depends(get_db)
+    user: TokenModel, authorize: AuthJWT = Depends(), db: Session = Depends(get_db)
 ):
     """
     The create_session function creates a new session for the user.
 
     :param user: Pass the user object to the function.
     :type user: TokenModel.
-    :param Authorize: Create the access token and refresh token.
-    :type Authorize: AuthJWT.
+    :param authorize: Create the access token and refresh token.
+    :type authorize: AuthJWT.
     :param db: Access the database.
     :type db: Session.
     :return: A dictionary with three keys: access_token, refresh_token and token_type
@@ -96,8 +96,8 @@ async def create_session(
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid password"
             )
-        access_token = Authorize.create_access_token(subject=_user.user_name)
-        refresh_token = Authorize.create_refresh_token(subject=_user.user_name)
+        access_token = authorize.create_access_token(subject=_user.user_name)
+        refresh_token = authorize.create_refresh_token(subject=_user.user_name)
 
         _user.refresh_token = refresh_token
         db.commit()
@@ -116,7 +116,7 @@ async def create_session(
 )
 async def refresh_token(
     refresh_token: str = Header(..., alias="Authorization"),
-    Authorize: AuthJWT = Depends(),
+    authorize: AuthJWT = Depends(),
     db: Session = Depends(get_db),
 ):
     """
@@ -127,20 +127,20 @@ async def refresh_token(
 
     :param refresh_token: Pass the refresh token from the request header.
     :type refresh_token: str.
-    :param Authorize: Check if the user is authorized to access the endpoint.
-    :type Authorize: AuthJWT.
+    :param authorize: Check if the user is authorized to access the endpoint.
+    :type authorize: AuthJWT.
     :param db: Access the database.
     :type db: Session.
     :return: A new access token and a new refresh token.
     :rtype: TokenModel.
     """
-    Authorize.jwt_refresh_token_required()
+    authorize.jwt_refresh_token_required()
     # Check if refresh token is in DB
-    user_name = Authorize.get_jwt_subject()
+    user_name = authorize.get_jwt_subject()
     user = db.query(User).filter(and_(user_name == User.email)).first()
     if f"Bearer {user.refresh_token}" == refresh_token:
-        access_token = Authorize.create_access_token(subject=user_name)
-        new_refresh_token = Authorize.create_refresh_token(subject=user_name)
+        access_token = authorize.create_access_token(subject=user_name)
+        new_refresh_token = authorize.create_refresh_token(subject=user_name)
 
         user.refresh_token = new_refresh_token
         db.commit()
