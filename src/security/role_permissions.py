@@ -11,7 +11,9 @@ class RoleChecker:
     def __init__(self, allowed_roles):
         self.allowed_roles = allowed_roles
 
-    async def __call__(self, auth: AuthJWT = Depends(), db: Session = Depends(get_db)):
+    async def __call__(
+            self, auth: AuthJWT = Depends(), db: Session = Depends(get_db)
+    ):
         """
         Dependency function that checks the user's role and returns the DB
         session object.
@@ -30,9 +32,9 @@ class RoleChecker:
             .filter(UserRole.user_id == user.id)
             .first()
         )
-        if user_role and user_role.role.name not in self.allowed_roles:
+        if not user_role or user_role.role.name not in self.allowed_roles:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
+                status_code=status.HTTP_403_FORBIDDEN,
                 detail="You don't have enough permissions"
             )
         return db
