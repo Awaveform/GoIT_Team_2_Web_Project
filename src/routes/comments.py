@@ -18,6 +18,16 @@ security = HTTPBearer()
 async def create_comment(photo_id: int, body: CommentSchema, 
                          created_by: User = Depends(get_current_user), 
                          db: AsyncSession = Depends(get_db)):
+    """
+    The create_comment function creates a new comment for the photo with the chosen id.
+        The created_by field is automatically set to the user who made this request.
+    
+    :param photo_id: int: Pass the photo id to the create_comment function
+    :param body: CommentSchema: Validate the data that is sent to the api
+    :param created_by: User: Get the user that is currently logged in
+    :param db: AsyncSession: Pass the database session to the repository layer
+    :return: A commentresponse object
+    """
     comment = await repository_comments.create_comment(body, photo_id, created_by.id, db)
     return CommentResponse(id=comment.id,
     comment=comment.comment,
