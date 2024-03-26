@@ -8,7 +8,7 @@ from src.repository.users import get_current_user
 from src.database.models import User
 from src.database.db import get_db
 from src.repository import comments as repository_comments
-from src.schemas  import CommentSchema, CommentResponse
+from src.schemas import CommentSchema, CommentResponse
 
 router = APIRouter(prefix="/photos", tags=["photos"])
 security = HTTPBearer()
