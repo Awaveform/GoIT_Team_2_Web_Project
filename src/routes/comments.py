@@ -19,4 +19,9 @@ async def create_comment(photo_id: int, body: CommentSchema,
                          created_by: User = Depends(get_current_user), 
                          db: AsyncSession = Depends(get_db)):
     comment = await repository_comments.create_comment(body, photo_id, created_by.id, db)
-    return comment
+    return CommentResponse(id=comment.id,
+    comment=comment.comment,
+    created_at= comment.created_at,
+    photo_id= comment.photo_id,
+    created_by= comment.created_by)
+    
