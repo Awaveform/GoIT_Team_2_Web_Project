@@ -66,8 +66,8 @@ class CreatePhotoModel (PhotoBase):
 
 class PhotoResponse (PhotoBase):
     id: int
-    url: str = Field(max_length=150)
-    description: str = Field(max_length=500)
+    url: str
+    description: str | None
     created_by: int
     created_at: datetime
 
