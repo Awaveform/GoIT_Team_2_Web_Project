@@ -53,3 +53,18 @@ class TokenModelResponse(BaseModel):
     access_token: str | None = Field(min_length=5)
     refresh_token: str | None = Field(min_length=5)
     token_type: str = "bearer"
+
+
+class CommentSchema(BaseModel):
+    comment: str = Field(max_length=500)
+
+
+class CommentResponse(CommentSchema):
+    id: int
+    created_at: datetime
+    updated_at: datetime 
+    photo_id: None 
+    created_by: UserResponse
+
+    class Config:
+        from_attributes = True
