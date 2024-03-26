@@ -62,9 +62,9 @@ class CommentSchema(BaseModel):
 class CommentResponse(CommentSchema):
     id: int
     created_at: datetime
-    updated_at: datetime 
-    photo_id: None 
-    created_by: UserResponse
+    updated_at: datetime | None
+    photo_id: int 
+    created_by: int
 
     class Config:
         from_attributes = True
