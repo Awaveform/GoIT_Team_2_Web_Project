@@ -8,7 +8,7 @@ from starlette.responses import JSONResponse
 
 from custom_fast_api import CustomFastAPI
 from src.conf.config import settings
-from src.routes import users, auth
+from src.routes import users, auth, rates
 
 app = CustomFastAPI()
 
@@ -22,6 +22,7 @@ async def startup():
 
 app.include_router(users.router, prefix="/api")
 app.include_router(auth.router, prefix="/api")
+app.include_router(rates.router, prefix="/api")
 
 
 @AuthJWT.load_config
