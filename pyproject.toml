@@ -43,3 +43,6 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
+
+[tool.poetry.dev-dependencies]
+pytest-mock = "^3.7.1"

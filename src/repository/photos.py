@@ -86,57 +86,5 @@ async def create_photo(description: str, current_user: User, db: Session, file: 
     return photo
 
 
-def get_photo_url_by_id(photo_id: int, db: Session) -> Optional[str]:
-    """
-    Get the URL of a photo by its ID.
-
-    :param photo_id: int: The ID of the photo
-    :param db: Session: The database session
-    :return: Optional[str]: The URL of the photo, or None if the photo with the given ID doesn't exist
-    """
-    photo = db.query(Photo).filter(Photo.id == photo_id).first()
-    if photo:
-        return photo.url
-    else:
-        return None
 
 
-def delete_photo_from_cloudinary(public_id: str):
-    """
-    Delete a photo from Cloudinary by its public_id.
-
-    :param public_id: str: The public_id of the photo to delete
-    :return: A dictionary containing information about the deletion status
-    """
-    cloudinary.config(
-        cloud_name=settings.cloudinary_name,
-        api_key=settings.cloudinary_api_key,
-        api_secret=settings.cloudinary_api_secret,
-        secure=True
-    )
-    try:
-        # Викликаємо метод видалення фото з Cloudinary
-        deletion_result = cloudinary.uploader.destroy(public_id)
-        return deletion_result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error deleting photo: {str(e)}")
-
-
-def delete_photo_by_id(photo_id: int, db: Session):
-    """
-    Delete a photo from the database by its ID.
-    """
-    photo = db.query(Photo).filter(Photo.id == photo_id).first()
-    if photo:
-        db.delete(photo)
-        db.commit()
-        return True
-    return False
-
-
-def get_photo_by_id(photo_id: int, db: Session) -> Photo:
-    """
-    Retrieve a photo by its ID.
-    """
-    photo = db.query(Photo).filter(Photo.id == photo_id).first()
-    return photo
