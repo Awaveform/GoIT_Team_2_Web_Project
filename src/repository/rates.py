@@ -13,6 +13,18 @@ async def create_rate_photo(
     db: Session
 ) -> Type[Rate]:
     """
+    Creates a new rate for a photo.
+
+    :param photo_id: The identifier of the photo for which the rate is created.
+    :type photo_id: int
+    :param grade: The rate given to the photo.
+    :type grade: RateModel
+    :param user_id: The identifier of the user creating the rate.
+    :type user_id: int
+    :param db: The database session object.
+    :type db: Session
+    :return: The newly created Rate object.
+    :rtype: Rate
     """
     
     new_rate = Rate(
@@ -28,6 +40,14 @@ async def create_rate_photo(
 
 async def get_rates(db: Session, **kw) -> list[Type[Rate]]:
     """
+    Retrieves rates based on provided filters.
+
+    :param db: The database session object.
+    :type db: Session
+    :param **kw: Filtering criteria.
+    :type **kw: dict
+    :return: List of filtered rates.
+    :rtype: list[Type[Rate]]
     """
     rates = db.query(Rate)
     

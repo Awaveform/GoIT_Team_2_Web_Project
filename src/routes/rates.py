@@ -23,6 +23,7 @@ from src.conf.config import settings
 router = APIRouter(prefix="/rates", tags=["rates"])
 security = HTTPBearer()
 
+
 @router.post(
     "/{photo_id}",
     response_model=Optional[RateModelResponse],
@@ -35,11 +36,23 @@ async def create_rates_for_photo(
     db: Session = Depends(get_db),
 ):
     """
+    Creates a rate for a photo.
+
+    :param photo_id: The identifier of the photo for which the rate is created.
+    :type photo_id: int
+    :param grade: The rate given to the photo.
+    :type grade: RateModel
+    :param user: The current authenticated user.
+    :type user: User
+    :param db: The database session object.
+    :type db: Session
+    :return: The created rate object.
+    :rtype: Rate
     """
-    if grade.grade < 0 or grade.grade > 5:
+    if grade.grade < 1 or grade.grade > 5:
         raise HTTPException(
             status_code = status.HTTP_400_BAD_REQUEST,
-            detail = "The grade must be greater than 0 and less than or equal to 5."
+            detail = "The grade must be greater than 1 and less than or equal to 5."
         )
 
     photos = await repository_photos.get_photos_by_user_id(
