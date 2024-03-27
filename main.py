@@ -1,5 +1,6 @@
 import redis.asyncio as redis
 import uvicorn
+from dotenv import load_dotenv
 from fastapi import Request
 from fastapi_jwt_auth import AuthJWT
 from fastapi_jwt_auth.exceptions import AuthJWTException, MissingTokenError
@@ -49,4 +50,5 @@ async def missing_token_exception_handler(request: Request, exc: MissingTokenErr
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    load_dotenv()
+    uvicorn.run(app, host="127.0.0.1", port=8000)

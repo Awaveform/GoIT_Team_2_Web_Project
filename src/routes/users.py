@@ -9,13 +9,11 @@ from fastapi.security import (
 )
 from sqlalchemy.orm import Session
 
-from src.database.db import get_db
-from src.database.models import Role, User
-from src.repository.users import get_current_user
-from src.schemas import UserDetailedResponse, Roles
+from src.database.models import Role
+from src.schemas import UserDetailedResponse
 from src.repository import users as repository_users
 from src.conf.config import settings
-
+from src.security.role_permissions import RoleChecker
 
 router = APIRouter(prefix="/users", tags=["users"])
 security = HTTPBearer()
@@ -28,14 +26,11 @@ r = redis.Redis(host=settings.redis_host, port=settings.redis_port)
 )
 async def get_user_info(
     user_name: str,
-    db: Session = Depends(get_db),
-    _: User = Depends(get_current_user),
+    db: Session = Depends(RoleChecker(allowed_roles=["admin"]))
 ):
     """
     Method that returns the full user info for the specific user.
-    :param _: Authorized user.
-    :type _: User.
-    :param user_name: User name.
+    :param user_name: User's name.
     :type user_name: str.
     :param db: DB session object.
     :type db: Session.
