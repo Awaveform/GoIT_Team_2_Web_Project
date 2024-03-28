@@ -66,7 +66,6 @@ class PhotoResponse(PhotoBase):
     created_at: datetime
 
 
-
 class PhotoBase(BaseModel):
     description: str | None = Field(max_length=500)
 
@@ -76,7 +75,6 @@ class PhotoResponse(PhotoBase):
     url: str
     created_by: int
     created_at: datetime
-
 
 
 class RateModel(BaseModel):
@@ -94,3 +92,7 @@ class RateModelResponse(RateModel):
 
 class ListRatesModelResponse(BaseModel):
     rates: list[RateModelResponse]
+
+
+class DeleteRatesResponse(BaseModel):
+    detail: str
