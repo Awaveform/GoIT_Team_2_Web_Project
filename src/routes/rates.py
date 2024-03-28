@@ -39,7 +39,7 @@ async def delete_rates_of_photo(
     :param db: The database session object.
     :type db: Session
     """
-    rates: list[Type[Rate]] | None = []
+    rates: list[Type[Rate]] = []
 
     if list_rate_id:
         
