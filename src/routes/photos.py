@@ -1,5 +1,5 @@
 from __future__ import annotations
-from fastapi import HTTPException, UploadFile, File, Depends, status, Path
+from fastapi import UploadFile, File, status
 from typing import Optional
 from sqlalchemy.orm import Session
 import redis
@@ -38,42 +38,3 @@ async def create_photo(description: Optional[str] = None, db: Session = Depends(
         created_by=new_photo.created_by,
         created_at=new_photo.created_at,
     )
-
-
-@router.get("/{photo_id}", response_model=PhotoResponse)
-def get_photo(photo_id: int,
-              db: Session = Depends(get_db)):
-    photo = repository_photos.get_photo_by_id(photo_id, db)
-    if photo is None:
-        raise HTTPException(status_code=404, detail="Photo not found")
-    return PhotoResponse(
-        id=photo.id,
-        url=photo.url,
-        description=photo.description,
-        created_by=photo.created_by,
-        created_at=photo.created_at,
-    )
-
-
-@router.delete("/{photo_id}", response_model=bool)
-def delete_photo(photo_id: int = Path(..., title="The ID of the photo to delete"),
-                 db: Session = Depends(get_db)):
-    """
-    Delete a photo from the database by its ID.
-    """
-    deleted = repository_photos.delete_photo_by_id(photo_id, db)
-    if not deleted:
-        raise HTTPException(status_code=404, detail="Photo not found")
-    return True
-
-
-@router.get("/{photo_id}/url", response_model=str)
-def get_photo_url(photo_id: int = Path(..., title="The ID of the photo"),
-                  db: Session = Depends(get_db)):
-    """
-    Get the URL of a photo by its ID.
-    """
-    photo_url = repository_photos.get_photo_url_by_id(photo_id, db)
-    if not photo_url:
-        raise HTTPException(status_code=404, detail="Photo not found")
-    return photo_url
