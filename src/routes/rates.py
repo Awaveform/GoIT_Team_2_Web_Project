@@ -46,7 +46,7 @@ async def delete_rates_of_photo(
         for rate_id in list_rate_id:
             if rate_id != 0:
                 rates.extend(await repository_rates.get_rates(db=db, **{"id": rate_id, "created_by": user_id}))
-        detail = f"Rates {[rate.id for rate in rates if rate.id != 0]} of user {user_id} have been successfully deleted."
+        detail = f"Rates {[rate.id for rate in rates]} of user {user_id} have been successfully deleted."
     else:
         rates = await repository_rates.get_rates(db=db, **{"created_by": user_id})
         detail = f"All user {user_id} rates have been successfully deleted."
