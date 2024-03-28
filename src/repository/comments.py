@@ -33,3 +33,41 @@ async def create_comment(body: CommentSchema, photo_id: int, created_by: int,  d
     db.commit()
     db.refresh(comment)
     return comment
+
+
+async def get_comments(photo_id: int, limit: int, offset: int, db: AsyncSession):
+    """
+    The get_comments function returns a list of comments for the photo with the given id.
+        
+    
+    :param photo_id: int: Filter the comments by photo_id
+    :param limit: int: Limit the number of comments returned
+    :param offset: int: Specify the number of comments to skip before returning
+    :param db: AsyncSession: Pass the database connection to the function
+    :return: A list of photocomment objects
+    """
+    stmt = select(PhotoComment).filter_by(photo_id=photo_id).offset(offset).limit(limit)
+    contacts =  db.execute(stmt)
+    return contacts.scalars().all()
+
+
+async def update_comment(comment_id: int, body: CommentSchema, user: User, db: AsyncSession):
+    stmt = select(PhotoComment).filter_by(comment_id=comment_id)
+    result = db.execute(stmt)
+    comment = result.scalar_one_or_none()
+    if comment and comment.created_by == user.id:
+        comment.comment = body.comment
+        db.commit()
+        await db.refresh(comment)
+    return comment
+    
+
+
+async def delete_comment(photo_id: int, comment_id:int, db: AsyncSession):
+    stmt = select(PhotoComment).filter_by(id=photo_id, comment_id=comment_id)
+    comment = await db.execute(stmt)
+    comment = comment.scalar_one_or_none()
+    if comment:
+        await db.delete(comment)
+        await db.commit()
+    return comment

@@ -24,3 +24,11 @@ class TestAsyncComments(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.comment, body.comment)
 
 
+    async def test_create_comment_no_body(self):
+        body = ""
+        result = await create_comment(body, 1, self.user, self.session)
+        self.assertIsInstance(result, PhotoComment)
+        self.assertEqual(result.comment, body.comment)
+
+
+
