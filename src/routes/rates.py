@@ -120,3 +120,35 @@ async def create_rates_for_photo(
     )
 
     return rate
+
+
+@router.delete(
+    "/{user_id}",
+    status_code=status.HTTP_204_NO_CONTENT
+)
+async def delete_rates_of_photo(
+    user_id: int,
+    list_rate_id: Optional[list[int]] = Query(None),
+    db: Session = Depends(RoleChecker(allowed_roles=["admin", "moderator"]))
+):
+    """
+    Deletes rates associated with a user for a photo.
+
+    :param user_id: The identifier of the user whose rates are to be deleted.
+    :type user_id: int
+    :param list_rate_id: List of rate identifiers for filtering and delete.
+    :type list_rate_id: Optional[list[int]]
+    :param db: The database session object.
+    :type db: Session
+    """
+    rates = []
+
+    if list_rate_id:
+        
+        for rate_id in list_rate_id:
+            if rate_id != 0:
+                rates.extend(await repository_rates.get_rates(db = db, **{"id": rate_id, "created_by": user_id}))
+    else:
+        rates = await repository_rates.get_rates(db = db, **{"created_by": user_id})
+    
+    await repository_rates.delete_rates(rates = rates, db = db)

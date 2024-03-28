@@ -58,3 +58,17 @@ async def get_rates(db: Session, **kw) -> list[Type[Rate]]:
         pass
     
     return rates.all()
+
+
+async def delete_rates(rates: list[Type[Rate]], db: Session) -> None:
+    """
+    Deletes a list of rates from the database.
+
+    :param rates: The list of rate objects to be deleted.
+    :type rates: list[Type[Rate]]
+    :param db: The database session object.
+    :type db: Session
+    """
+    for rate in rates:
+        db.delete(rate)
+        db.commit()
