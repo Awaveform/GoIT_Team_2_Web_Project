@@ -49,6 +49,18 @@ class TokenModelResponse(BaseModel):
     token_type: str = "bearer"
 
 
+class PhotoBase(BaseModel):
+    description: str | None = Field(max_length=500)
+
+
+class PhotoResponse(PhotoBase):
+    id: int
+    url: str
+    created_by: int
+    created_at: datetime
+
+
+
 class BaseTransformParamsModel(BaseModel):
     effect: str | None
     angle: PositiveInt | None
