@@ -55,19 +55,13 @@ class TokenModelResponse(BaseModel):
     token_type: str = "bearer"
 
 
-class PhotoBase (BaseModel):
-    description: str = Field(max_length=500)
+class PhotoBase(BaseModel):
+    description: str | None = Field(max_length=500)
 
 
-class CreatePhotoModel (PhotoBase):
-    # description: str = Field(max_length=500)
-    pass
-
-
-class PhotoResponse (PhotoBase):
+class PhotoResponse(PhotoBase):
     id: int
     url: str
-    description: str | None
     created_by: int
     created_at: datetime
 

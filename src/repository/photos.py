@@ -2,15 +2,12 @@ from typing import Type
 from fastapi import HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 import cloudinary.uploader
-from typing import Optional
+
 
 from src.conf.config import settings
 from src.database.models import Photo, User
 
-import imghdr
 import uuid
-from typing import Optional
-from sqlalchemy.exc import IntegrityError
 
 
 async def get_photos_by_user_id(user_id: int, db: Session) -> list[Type[Photo]]:
@@ -28,7 +25,7 @@ async def get_photos_by_user_id(user_id: int, db: Session) -> list[Type[Photo]]:
     return photos
 
 
-def upload_photo_to_cloudinary(current_user: User, file: UploadFile = File(), description: Optional[str] = None) -> str:
+def upload_photo_to_cloudinary(current_user: User, file: UploadFile = File()) -> str:
     """
     The upload_photo_to_cloudinary function uploads a photo to the cloudinary server.
     It takes in three parameters: current_user, file, and description. The current_user parameter is used to
@@ -38,7 +35,6 @@ def upload_photo_to_cloudinary(current_user: User, file: UploadFile = File(), de
 
     :param current_user: User: Get the username of the user who is currently logged in
     :param file: UploadFile: Get the file uploaded by the user
-    :param description: Optional[str]: Description of the photo (optional)
     :return: The url of the photo uploaded to cloudinary
     """
     # Перевірка формату файлу
@@ -48,7 +44,7 @@ def upload_photo_to_cloudinary(current_user: User, file: UploadFile = File(), de
         raise HTTPException(status_code=400, detail=f"Unsupported file format: {file_extension}. "
                                                     f"Supported formats are: {', '.join(allowed_formats)}")
 
-    unique_filename = str(uuid.uuid4()) + '.' + file_extension
+    unique_filename = str(uuid.uuid4())
 
     cloudinary.config(
         cloud_name=settings.cloudinary_name,
@@ -58,7 +54,6 @@ def upload_photo_to_cloudinary(current_user: User, file: UploadFile = File(), de
     )
     try:
         public_id = f'PhotoShareApp/{current_user.user_name}/{unique_filename}'
-
         upload_result = cloudinary.uploader.upload(file.file,
                                                    public_id=public_id)
         photo_url = upload_result['secure_url']
