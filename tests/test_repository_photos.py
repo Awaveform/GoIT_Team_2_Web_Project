@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 from sqlalchemy.orm import Session
 
 from src.database.models import User, Photo
-from src.repository.photos import get_photos_by_user_id
+from src.repository.photos import get_photos_by_user_id, get_photo_by_photo_id
 
 
 class TestPhotos(unittest.IsolatedAsyncioTestCase):
@@ -24,3 +24,11 @@ class TestPhotos(unittest.IsolatedAsyncioTestCase):
             user_id=self.user.id, db=self.session
         )
         assert actual_photos == expected_photos
+
+    async def test_get_photo_by_photo_id(self):
+        expected_photo: Photo = Photo(created_by=self.user.id)
+        self.session.query().filter().first.return_value = expected_photo
+        actual_photo: Type[Photo] = await get_photo_by_photo_id(
+            photo_id=self.user.id, db=self.session
+        )
+        assert actual_photo == expected_photo
