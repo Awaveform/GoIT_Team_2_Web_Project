@@ -183,7 +183,7 @@ async def update_token(user: User, token: str | None, db: Session) -> None:
 
 
 async def get_current_user(
-    Authorize: AuthJWT = Depends(), db: Session = Depends(get_db)
+    authorize: AuthJWT = Depends(), db: Session = Depends(get_db)
 ) -> Type[User]:
     """
     The get_current_user function is a dependency that can be used to get the current
@@ -191,15 +191,15 @@ async def get_current_user(
     It will use the JWT token in the Authorization header to retrieve and return a User
     object.
 
-    :param Authorize: Get the current user's email.
-    :type Authorize: AuthJWT.
+    :param authorize: Get the current user's email.
+    :type authorize: AuthJWT.
     :param db: Get the database session.
     :type db: Session.
     :return: The current user.
     :rtype: Type[User].
     """
-    Authorize.jwt_required()
+    authorize.jwt_required()
 
-    user_name = Authorize.get_jwt_subject()
+    user_name = authorize.get_jwt_subject()
 
     return await get_user_by_user_name(user_name, db)

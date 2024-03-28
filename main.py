@@ -1,5 +1,6 @@
 import redis.asyncio as redis
 import uvicorn
+from dotenv import load_dotenv
 from fastapi import Request
 from fastapi_jwt_auth import AuthJWT
 from fastapi_jwt_auth.exceptions import AuthJWTException, MissingTokenError
@@ -8,9 +9,10 @@ from starlette.responses import JSONResponse
 
 from custom_fast_api import CustomFastAPI
 from src.conf.config import settings
-from src.routes import users, auth, comments
+from src.routes import users, auth, photos, comments
 
 app = CustomFastAPI()
+
 
 @app.on_event("startup")
 async def startup():
@@ -22,6 +24,7 @@ async def startup():
 
 app.include_router(users.router, prefix="/api")
 app.include_router(auth.router, prefix="/api")
+app.include_router(photos.router, prefix="/api")
 app.include_router(comments.router, prefix="/api")
 
 
@@ -49,4 +52,5 @@ async def missing_token_exception_handler(request: Request, exc: MissingTokenErr
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    load_dotenv()
+    uvicorn.run(app, host="127.0.0.1", port=8000)
