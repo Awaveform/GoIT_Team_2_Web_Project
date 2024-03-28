@@ -25,6 +25,7 @@ async def get_photos_by_user_id(user_id: int, db: Session) -> list[Type[Photo]]:
     return photos
 
 
+# TODO: AR refactor -move logic and exeption to routs
 def upload_photo_to_cloudinary(current_user: User, file: UploadFile = File()) -> str:
     """
     The upload_photo_to_cloudinary function uploads a photo to the cloudinary server.
@@ -57,6 +58,8 @@ def upload_photo_to_cloudinary(current_user: User, file: UploadFile = File()) ->
         upload_result = cloudinary.uploader.upload(file.file,
                                                    public_id=public_id)
         photo_url = upload_result['secure_url']
+        print(photo_url)
+        print(public_id)
         return photo_url
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error uploading photo: {str(e)}")
