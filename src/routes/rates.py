@@ -43,9 +43,9 @@ async def get_rates_by_user(
         
         for user_id in list_user_id:
             if user_id != 0:
-                rates.extend(await repository_rates.get_rates(db = db, **{"created_by": user_id}))
+                rates.extend(await repository_rates.get_rates(db=db, **{"created_by": user_id}))
         
         return {"rates": rates}
 
-    rates = await repository_rates.get_rates(db = db)
+    rates = await repository_rates.get_rates(db=db)
     return {"rates": rates}
