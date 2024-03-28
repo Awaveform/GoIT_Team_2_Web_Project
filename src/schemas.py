@@ -53,3 +53,20 @@ class TokenModelResponse(BaseModel):
     access_token: str | None = Field(min_length=5)
     refresh_token: str | None = Field(min_length=5)
     token_type: str = "bearer"
+
+
+class RateModel(BaseModel):
+    grade: int
+    
+
+class RateModelResponse(RateModel):
+    created_at: datetime | None
+    updated_at: datetime | None
+    created_by: int
+
+    class Config:
+        orm_mode = True
+
+
+class ListRatesModelResponse(BaseModel):
+    rates: list[RateModelResponse]
