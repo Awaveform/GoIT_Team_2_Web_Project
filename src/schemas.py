@@ -53,3 +53,15 @@ class TokenModelResponse(BaseModel):
     access_token: str | None = Field(min_length=5)
     refresh_token: str | None = Field(min_length=5)
     token_type: str = "bearer"
+
+
+class PhotoBase(BaseModel):
+    description: str | None = Field(max_length=500)
+
+
+class PhotoResponse(PhotoBase):
+    id: int
+    url: str
+    created_by: int
+    created_at: datetime
+

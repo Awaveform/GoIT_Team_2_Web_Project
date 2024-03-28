@@ -39,3 +39,10 @@ pytest-asyncio = "^0.23.5.post1"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+
+[tool.poetry.dev-dependencies]
+pytest-mock = "^3.7.1"
