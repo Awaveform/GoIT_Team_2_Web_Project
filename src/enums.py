@@ -25,9 +25,9 @@ class PhotoCrop(enum.Enum):
     SCALE = "scale"
     PAD = "pad"
 
+
 class PhotoGravity(enum.Enum):
     FACES = "faces"
     AUTO = "auto"
     CENTER = "center"
     SOUTH = "south"
-

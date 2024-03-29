@@ -1,6 +1,5 @@
-from typing import Type, Tuple
+from typing import Type
 
-from cloudinary import CloudinaryImage
 from fastapi import APIRouter, status, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -8,8 +7,6 @@ from src.database.db import get_db
 from src.database.models import Photo, User
 from src.repository.users import get_current_user
 from src.schemas import TransformedPhotoModelResponse, TransformPhotoModel
-from src.enums import Roles
-from src.security.role_permissions import RoleChecker
 from src.repository import transform_photos as repository_transform
 from src.repository import photos as repository_photos
 
@@ -39,7 +36,7 @@ async def transform_photo(
     :return: Transformed photo instance.
     :rtype: TransformedPhotoModelResponse
     """
-    photo: Type[Photo] = await repository_photos.get_photo_by_photo_id(
+    photo: Photo = await repository_photos.get_photo_by_photo_id(
         photo_id=photo_id, db=db
     )
     if not photo:

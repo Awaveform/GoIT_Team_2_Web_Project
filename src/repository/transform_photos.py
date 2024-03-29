@@ -10,20 +10,20 @@ import uuid
 
 from src.conf.config import settings
 from src.database.models import Photo
-from src.repository.photos import get_photo_by_photo_id
 from src.schemas import TransformPhotoModel
 
 
-async def update_orig_photo_with_transformed_photo(
-    db: Session, photo_id: int, photo_url: str, updated_by: int, photo_description: str
+async def _update_orig_photo_with_transformed_photo(
+    db: Session, orig_photo: Photo, photo_url: str, updated_by: int, photo_description:
+        str
 ):
     """
     Method updates the original photo in the db with a transformed photo.
 
     :param db: DB instance.
     :type db: Session.
-    :param photo_id: Original photo identifier.
-    :type photo_id: int.
+    :param orig_photo: Original photo.
+    :type orig_photo: Photo.
     :param photo_url: Original photo URL.
     :type photo_url: str.
     :param updated_by: User who updated a photo.
@@ -33,27 +33,19 @@ async def update_orig_photo_with_transformed_photo(
     :return: Photo instance.
     :rtype: Photo.
     """
-    original_photo: Type[Photo] | None = await get_photo_by_photo_id(
-        db=db, photo_id=photo_id
-    )
-    if not original_photo:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Photo with id {photo_id} wasn't found",
-        )
-    original_photo.url = photo_url
-    original_photo.updated_by = updated_by
-    original_photo.is_transformed = True
-    original_photo.description = photo_description
-    db.add(original_photo)
+    orig_photo.url = photo_url
+    orig_photo.updated_by = updated_by
+    orig_photo.is_transformed = True
+    orig_photo.description = photo_description
+    db.add(orig_photo)
     db.commit()
-    db.refresh(original_photo)
-    return original_photo
+    db.refresh(orig_photo)
+    return orig_photo
 
 
-async def create_transformed_photo_in_db(
+async def _create_transformed_photo_in_db(
     db: Session,
-    orig_photo_id: int,
+    orig_photo: Photo,
     photo_url: str,
     updated_by: int,
     photo_description: str,
@@ -63,8 +55,8 @@ async def create_transformed_photo_in_db(
 
     :param db: DB instance.
     :type db: Session.
-    :param orig_photo_id: Original photo identifier.
-    :type orig_photo_id: int.
+    :param orig_photo: Original photo.
+    :type orig_photo: Photo.
     :param photo_url: Original photo URL.
     :type photo_url: str.
     :param updated_by: User who updated a photo.
@@ -74,26 +66,26 @@ async def create_transformed_photo_in_db(
     :return: Photo instance.
     :rtype: Photo.
     """
-    new_photo = Photo(
+    transformed_photo = Photo(
         url=photo_url,
         description=photo_description,
         created_by=updated_by,
-        original_photo_id=orig_photo_id,
+        original_photo_id=orig_photo.id,
         is_transformed=True,
     )
-    db.add(new_photo)
+    db.add(transformed_photo)
     db.commit()
-    db.refresh(new_photo)
-    return new_photo
+    db.refresh(transformed_photo)
+    return transformed_photo
 
 
-async def save_transformed_photo_to_db(
+async def _save_transformed_photo_to_db(
     db: Session,
     transformed_photo_url: str,
     updated_by: int,
     to_override_orig_photo,
     photo_description: str,
-    orig_photo_id: int,
+    orig_photo: Photo,
 ) -> Type[Photo] | None | Photo:
     """
     Method covers the logic of saving transformed photo in the DB.
@@ -109,23 +101,23 @@ async def save_transformed_photo_to_db(
     :type to_override_orig_photo: bool.
     :param photo_description: Photo description.
     :type photo_description: str.
-    :param orig_photo_id: Original photo identifier.
-    :type orig_photo_id: int.
+    :param orig_photo: Original photo.
+    :type orig_photo: Photo.
     :return: Photo instance.
     :rtype: Type[Photo] | None | Photo.
     """
     if to_override_orig_photo:
-        return await update_orig_photo_with_transformed_photo(
+        return await _update_orig_photo_with_transformed_photo(
             db=db,
-            photo_id=orig_photo_id,
+            orig_photo=orig_photo,
             photo_url=transformed_photo_url,
             updated_by=updated_by,
             photo_description=photo_description,
         )
     else:
-        return await create_transformed_photo_in_db(
+        return await _create_transformed_photo_in_db(
             db=db,
-            orig_photo_id=orig_photo_id,
+            orig_photo=orig_photo,
             photo_url=transformed_photo_url,
             updated_by=updated_by,
             photo_description=photo_description,
@@ -133,7 +125,7 @@ async def save_transformed_photo_to_db(
 
 
 async def apply_transformation(
-    photo: Type[Photo],
+    photo: Photo,
     updated_by: int,
     body: TransformPhotoModel,
     db: Session,
@@ -171,11 +163,11 @@ async def apply_transformation(
             detail=f"Error occurred during image transformation: '{str(err)}'",
         )
     transformed_url = transformed_img["secure_url"]
-    return await save_transformed_photo_to_db(
+    return await _save_transformed_photo_to_db(
         db=db,
         transformed_photo_url=transformed_url,
         updated_by=updated_by,
         to_override_orig_photo=body.to_override,
         photo_description=body.description,
-        orig_photo_id=photo.id,
+        orig_photo=photo,
     )

@@ -9,9 +9,9 @@ from src.database.models import User, Photo
 from src.enums import PhotoEffect, PhotoGravity
 from src.repository.transform_photos import (
     apply_transformation,
-    save_transformed_photo_to_db,
-    update_orig_photo_with_transformed_photo,
-    create_transformed_photo_in_db,
+    _save_transformed_photo_to_db,
+    _update_orig_photo_with_transformed_photo,
+    _create_transformed_photo_in_db,
 )
 from src.schemas import TransformPhotoModel, BaseTransformParamsModel
 
@@ -32,9 +32,9 @@ class TestTransformPhotos(unittest.IsolatedAsyncioTestCase):
             original_photo_id=self.photo_id,
             is_transformed=True,
         )
-        transformed_photo: Photo = await create_transformed_photo_in_db(
+        transformed_photo: Photo = await _create_transformed_photo_in_db(
             db=self.session,
-            orig_photo_id=self.photo_id,
+            orig_photo=Photo(id=self.photo_id),
             photo_url=self.transformed_url,
             updated_by=self.user.id,
             photo_description="Transformed photo",
@@ -57,9 +57,9 @@ class TestTransformPhotos(unittest.IsolatedAsyncioTestCase):
             is_transformed=False,
         )
         self.session.query().filter().first.return_value = orig_photo
-        transformed_photo: Photo = await update_orig_photo_with_transformed_photo(
+        transformed_photo: Photo = await _update_orig_photo_with_transformed_photo(
             db=self.session,
-            photo_id=self.photo_id,
+            orig_photo=orig_photo,
             photo_url=self.transformed_url,
             updated_by=self.user.id,
             photo_description=transformed_photo_desc,
@@ -67,30 +67,6 @@ class TestTransformPhotos(unittest.IsolatedAsyncioTestCase):
         assert transformed_photo.is_transformed is True
         assert transformed_photo.description == transformed_photo_desc
         assert transformed_photo is orig_photo
-
-    async def test_upd_orig_photo_w_transformed_photo_when_orig_photo_not_found(self):
-        orig_photo_desc, transformed_photo_desc = (
-            "Original photo",
-            "Transformed photo",
-        )
-        self.session.query().filter().first.return_value = None
-        try:
-            await update_orig_photo_with_transformed_photo(
-                db=self.session,
-                photo_id=self.photo_id,
-                photo_url=self.photo_url,
-                updated_by=self.user.id,
-                photo_description=transformed_photo_desc,
-            )
-        except HTTPException as actual_http_err:
-            exp_http_err = HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Photo with id {self.photo_id} wasn't found",
-            )
-            assert exp_http_err.status_code == actual_http_err.status_code
-            assert exp_http_err.detail == actual_http_err.detail
-        else:
-            raise AssertionError("The error wasn't raised when expected")
 
     async def test_save_transformed_photo_to_db_when_to_override_true(self):
         orig_photo_desc, transformed_photo_desc = (
@@ -107,13 +83,13 @@ class TestTransformPhotos(unittest.IsolatedAsyncioTestCase):
             is_transformed=False,
         )
         self.session.query().filter().first.return_value = orig_photo
-        transformed_photo: Photo = await save_transformed_photo_to_db(
+        transformed_photo: Photo = await _save_transformed_photo_to_db(
             db=self.session,
             transformed_photo_url=self.transformed_url,
             updated_by=self.user.id,
             to_override_orig_photo=True,
             photo_description=transformed_photo_desc,
-            orig_photo_id=self.photo_id,
+            orig_photo=orig_photo,
         )
         assert orig_photo is transformed_photo
         assert transformed_photo.is_transformed is True
@@ -131,13 +107,13 @@ class TestTransformPhotos(unittest.IsolatedAsyncioTestCase):
             original_photo_id=self.photo_id,
             is_transformed=False,
         )
-        transformed_photo: Photo = await save_transformed_photo_to_db(
+        transformed_photo: Photo = await _save_transformed_photo_to_db(
             db=self.session,
             transformed_photo_url=self.transformed_url,
             updated_by=self.user.id,
             to_override_orig_photo=False,
             photo_description=transformed_photo_desc,
-            orig_photo_id=self.photo_id,
+            orig_photo=orig_photo,
         )
         assert transformed_photo.is_transformed
         assert orig_photo.created_by == transformed_photo.created_by
@@ -216,7 +192,7 @@ class TestTransformPhotos(unittest.IsolatedAsyncioTestCase):
 
     @patch("cloudinary.uploader.upload")
     async def test_apply_transformation_to_override_error_upload(
-        self, mock_cloud_upload
+            self, mock_cloud_upload
     ):
         mock_cloud_upload.side_effect = cloudinary.exceptions.Error("upload error")
 

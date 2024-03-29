@@ -26,7 +26,7 @@ async def get_photos_by_user_id(user_id: int, db: Session) -> list[Type[Photo]]:
     return photos
 
 
-async def get_photo_by_photo_id(photo_id: int, db: Session) -> Type[Photo]:
+async def get_photo_by_photo_id(photo_id: int, db: Session) -> Photo:
     """
     Method that returns the uploaded photo by the photo identifier.
 
@@ -35,7 +35,7 @@ async def get_photo_by_photo_id(photo_id: int, db: Session) -> Type[Photo]:
     :param db: db session object.
     :rtype db: Session.
     :return: Photo.
-    :rtype: Type[Photo]
+    :rtype: Photo
     """
     photo = db.query(Photo).filter(Photo.id == photo_id).first()
     return photo
