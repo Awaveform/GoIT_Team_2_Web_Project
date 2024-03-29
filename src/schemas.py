@@ -91,7 +91,7 @@ class TransformedPhotoModelResponse(BaseModel):
 
 
 class RateModel(BaseModel):
-    grade: int
+    grade: int = Field(ge=1, le=5)
 
 
 class RateModelResponse(RateModel):

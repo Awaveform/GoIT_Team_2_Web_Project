@@ -64,12 +64,6 @@ async def create_rates_for_photo(
             detail="Owner of a photo has not availability to rate the photo."
         )
     
-    if not 1 <= grade.grade <= 5:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"The grade must be an integer between 1 and 5, inclusive. Actual grade: {grade.grade}."
-        )
-    
     rates = await repository_rates.get_rates(
         db=db,
         created_by=user.id,

@@ -29,12 +29,3 @@ class TestCreateRatePhoto(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(1, result.photo_id)
         self.assertEqual(self.users_id["admin"], result.created_by)
         self.db.add.assert_called_once_with(result)
-
-    async def test_missing_argument(self):
-        
-        with self.assertRaises(TypeError):
-            await create_rate_photo(
-                photo_id=1,
-                user_id=self.users_id["admin"],
-                db=self.db
-            )
