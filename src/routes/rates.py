@@ -47,13 +47,18 @@ async def create_rates_for_photo(
     :return: The created rate object.
     :rtype: Rate
     """
-    photos = await repository_photos.get_photos_by_user_id(
-        user_id=user.id,
+    photo = await repository_photos.get_photo_by_photo_id(
+        photo_id=photo_id,
         db=db
     )
-    photo = [photo for photo in photos if photo.id == photo_id]
 
-    if photo:
+    if photo is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"The photo {photo_id} does not exist."
+        )
+
+    if photo.created_by == user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Owner of a photo has not availability to rate the photo."
