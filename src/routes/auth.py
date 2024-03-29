@@ -17,7 +17,8 @@ from src.database.db import get_db
 from src.database.models import User
 from src.repository.users import get_current_user, get_user_by_user_name
 from src.schemas import UserModel, UserResponse, TokenModelResponse, TokenModel, \
-    UserDetailedResponse, Roles
+    UserDetailedResponse
+from src.enums import Roles
 from src.repository import users as repository_users
 from src.services.auth import get_password_hash, verify_password
 from src.conf.config import settings
