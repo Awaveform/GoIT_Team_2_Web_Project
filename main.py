@@ -9,7 +9,7 @@ from starlette.responses import JSONResponse
 
 from custom_fast_api import CustomFastAPI
 from src.conf.config import settings
-from src.routes import users, auth, photos, transform_photos
+from src.routes import users, auth, photos, transform_photos, rates
 
 app = CustomFastAPI()
 
@@ -26,6 +26,7 @@ app.include_router(users.router, prefix="/api")
 app.include_router(auth.router, prefix="/api")
 app.include_router(photos.router, prefix="/api")
 app.include_router(transform_photos.router, prefix="/api")
+app.include_router(rates.router, prefix="/api")
 
 
 @AuthJWT.load_config

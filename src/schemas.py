@@ -60,7 +60,6 @@ class PhotoResponse(PhotoBase):
     created_at: datetime
 
 
-
 class BaseTransformParamsModel(BaseModel):
     effect: str | None
     angle: PositiveInt | None
@@ -86,6 +85,18 @@ class TransformedPhotoModelResponse(BaseModel):
     updated_by: int | None
     original_photo_id: int | None
     is_transformed: bool | None
+
+    class Config:
+        orm_mode = True
+
+
+class RateModel(BaseModel):
+    grade: int = Field(ge=1, le=5)
+
+
+class RateModelResponse(RateModel):
+    created_at: datetime
+    updated_at: datetime | None
 
     class Config:
         orm_mode = True
