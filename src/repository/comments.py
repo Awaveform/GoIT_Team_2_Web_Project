@@ -92,3 +92,21 @@ async def create_comment(
     db.commit()
     db.refresh(comment)
     return comment
+
+
+async def get_comments(photo_id: int, limit: int, offset: int, db: Session):
+    """
+    The get_comments function returns a list of comments for the photo with the given id.
+        The limit and offset parameters are used to paginate through results.
+    
+    
+    :param photo_id: int: Filter the comments by photo_id
+    :param limit: int: Limit the number of comments returned
+    :param offset: int: Skip a certain number of rows in the database
+    :param db: Session: Pass the database connection to the function
+    :return: A list of comments
+    """
+    stmt = select(PhotoComment).filter_by(photo_id=photo_id).offset(offset).limit(limit)
+    contacts = db.execute(stmt)
+    return contacts.scalars().all()
+

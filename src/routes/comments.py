@@ -53,3 +53,38 @@ async def create_comment(
             raise HTTPException(status_code=400, detail="Wrong request")
     else:
         raise HTTPException(status_code=400, detail="Comment can not be blank")
+
+
+@router.get("/{photo_id}/comments", response_model=list[CommentResponse])
+async def get_comments(
+    photo_id: int,
+    limit: int = Query(10, ge=10, le=500),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+):
+    """
+    The get_comments function returns a list of comments for the specified photo.
+
+    :param photo_id: int: Get the comments for a specific photo
+    :param limit: int: Limit the number of comments returned
+    :param ge: Specify the minimum value of the parameter
+    :param le: Limit the number of comments that can be returned at once
+    :param offset: int: Skip the first n comments
+    :param ge: Set a minimum value for the limit and offset parameters
+    :param db: Session: Get the database session
+    :param : Limit the number of comments that are returned
+    :return: A list of commentresponse objects
+    """
+    comments = await repository_comments.get_comments(photo_id, limit, offset, db)
+    result = []
+    for comment in comments:
+        result.append(
+            CommentResponse(
+                comment_id=comment.id,
+                comment=comment.comment,
+                created_at=comment.created_at,
+                photo_id=comment.photo_id,
+                created_by=comment.created_by,
+            )
+        )
+    return result
