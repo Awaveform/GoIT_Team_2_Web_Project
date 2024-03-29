@@ -2,7 +2,7 @@ import unittest
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
-from sqlalchemy.orm import Session
+
 from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi import HTTPException
 

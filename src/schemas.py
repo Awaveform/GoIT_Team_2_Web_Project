@@ -89,3 +89,19 @@ class TransformedPhotoModelResponse(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class CommentSchema(BaseModel):
+    comment: str = Field(max_length=500)
+    created_at: datetime
+    updated_at: datetime | None
+    photo_id: int 
+    created_by: int
+
+
+class CommentResponse(CommentSchema):
+    comment_id: int
+
+
+    class Config:
+        from_attributes = True
