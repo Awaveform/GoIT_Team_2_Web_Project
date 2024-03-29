@@ -8,6 +8,7 @@ from src.conf.config import settings
 from src.database.models import Photo, User
 
 import uuid
+from src.database.models import Photo
 
 
 async def get_photos_by_user_id(user_id: int, db: Session) -> list[Type[Photo]]:
@@ -23,6 +24,21 @@ async def get_photos_by_user_id(user_id: int, db: Session) -> list[Type[Photo]]:
     """
     photos = db.query(Photo).filter(Photo.created_by == user_id).all()
     return photos
+
+
+async def get_photo_by_photo_id(photo_id: int, db: Session) -> Photo:
+    """
+    Method that returns the uploaded photo by the photo identifier.
+
+    :param photo_id: Photo identifier.
+    :type photo_id: int.
+    :param db: db session object.
+    :rtype db: Session.
+    :return: Photo.
+    :rtype: Photo
+    """
+    photo = db.query(Photo).filter(Photo.id == photo_id).first()
+    return photo
 
 
 # TODO: AR refactor -move logic and exeption to routs

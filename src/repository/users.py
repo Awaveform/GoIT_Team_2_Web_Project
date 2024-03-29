@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import pickle
-from functools import wraps
-from typing import Type, Tuple, List
+from typing import Type, Tuple
 
 import redis
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends
 from fastapi_jwt_auth import AuthJWT
 from sqlalchemy.orm import Session
 
@@ -13,7 +12,8 @@ from src.conf.config import settings
 from src.database.db import get_db
 from src.database.models import User, UserRole, Role, Photo
 from src.repository.photos import get_photos_by_user_id
-from src.schemas import UserModel, UserRoleModel, Roles
+from src.schemas import UserModel, UserRoleModel
+from src.enums import Roles
 
 r = redis.Redis(host=settings.redis_host, port=settings.redis_port)
 
