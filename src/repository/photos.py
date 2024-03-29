@@ -102,5 +102,27 @@ async def create_photo(description: str, current_user: User, db: Session, file: 
     return photo
 
 
+def delete_photo_by_id(photo_id: int, db: Session):
+
+    """
+The delete_photo_by_id function deletes a photo from the database by its id.
+    Args:
+        photo_id (int): The id of the photo to be deleted.
+        db (Session): A connection to the database.
+
+:param photo_id: int: Specify the id of the photo that is to be deleted
+:param db: Session: Pass the database session to the function
+:return: True if the photo is deleted and false if it is not
+:doc-author: Trelent
+"""
+    photo = db.query(Photo).filter(Photo.id == photo_id).first()
+    if photo:
+        db.delete(photo)
+        db.commit()
+    return photo
+
+
+
+
 
 
