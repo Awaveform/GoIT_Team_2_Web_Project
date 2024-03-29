@@ -3,15 +3,14 @@ from typing import Type
 from sqlalchemy.orm import Session
 
 from src.database.models import Rate
-from src.schemas import RateModel
 
 
 async def create_rate_photo(
     photo_id: int,
-    grade: RateModel,
+    grade: int,
     user_id: int,
     db: Session
-) -> Type[Rate]:
+) -> Rate:
     """
     Creates a new rate for a photo.
 
@@ -26,11 +25,10 @@ async def create_rate_photo(
     :return: The newly created Rate object.
     :rtype: Rate
     """
-    
     new_rate = Rate(
-        grade = grade,
-        photo_id = photo_id,
-        created_by = user_id
+        grade=grade,
+        photo_id=photo_id,
+        created_by=user_id
     )
     db.add(new_rate)
     db.commit()
