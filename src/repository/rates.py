@@ -1,8 +1,35 @@
 from typing import Type
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, Query
 
 from src.database.models import Rate
+
+
+async def _filter_by(query: Query[Type[Rate]], **kw) -> Query[Type[Rate]]:
+    """
+    Filters a query for Rate objects based on provided criteria.
+
+    :param query: The query object to be filtered.
+    :type query: Query[Type[Rate]]
+    :param **kw: Filtering criteria.
+    :type **kw: dict
+    :return: The filtered query.
+    :rtype: Query[Type[Rate]]
+    """
+    filter_by_data = {
+        "id": kw.get("id"),
+        "grade": kw.get("grade"),
+        "created_at": kw.get("created_at"),
+        "updated_at": kw.get("updated_at"),
+        "photo_id": kw.get("photo_id"),
+        "created_by": kw.get("created_by")
+    }
+
+    for key, value in filter_by_data.items():
+        if value is not None:
+            query = query.filter(getattr(Rate, key) == value)
+
+    return query
 
 
 async def create_rate_photo(
@@ -47,13 +74,6 @@ async def get_rates(db: Session, **kw) -> list[Type[Rate]]:
     :return: List of filtered rates.
     :rtype: list[Type[Rate]]
     """
-    rates = db.query(Rate)
-    
-    try:
-        for key, value in kw.items():
-            if value:
-                rates = rates.filter(getattr(Rate, key) == value)
-    except AttributeError:
-        pass
-    
+    query = db.query(Rate)
+    rates = await _filter_by(query=query, **kw)
     return rates.all()
