@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, Query, status, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, status, HTTPException
+from sqlalchemy.orm import Session
 from fastapi.security import HTTPBearer
 
 from src.repository.users import get_current_user
@@ -21,7 +21,7 @@ async def create_comment(
     photo_id: int,
     body: CommentSchema,
     created_by: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
 ):
     """
     The create_comment function creates a comment for a photo.
