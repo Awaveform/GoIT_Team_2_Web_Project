@@ -16,7 +16,7 @@ async def get_photo_by_id(db: Session, photo_id: int) -> Photo | None:
             photo_id (int): The id of the photo to retrieve from the database.
         Returns:
             Photo | None: A single Photo object or None if no matching record is found in the database.
-    
+
     :param db: Session: Create a connection to the database
     :param photo_id: int: Specify which photo to get from the database
     :return: A photo object or none
@@ -32,7 +32,7 @@ async def get_user_by_id(db: Session, user_id: int) -> Optional[User]:
     """
     The get_user_by_id function returns a user object from the database based on the user_id parameter.
     If no such user exists, it will return None.
-    
+
     :param db: Session: Access the database
     :param user_id: int: Identify the user in the database
     :return: A user object
@@ -55,7 +55,7 @@ async def create_comment(
             created_by (int): The id of the user who is creating this comment.
         Returns:
             PhotoComment: A PhotoComment object representing the newly-created database entry for this new Comment.
-    
+
     :param body: CommentSchema: Validate the request body
     :param photo_id: int: Get the photo by id
     :param created_by: int: Get the user who created the comment
@@ -92,3 +92,20 @@ async def create_comment(
     db.commit()
     db.refresh(comment)
     return comment
+
+
+async def get_comments(photo_id: int, limit: int, offset: int, db: Session):
+    """
+    The get_comments function returns a list of comments for the photo with the given id.
+        The limit and offset parameters are used to paginate through results.
+    
+    
+    :param photo_id: int: Filter the comments by photo_id
+    :param limit: int: Limit the number of comments that are returned
+    :param offset: int: Specify the number of comments to skip
+    :param db: Session: Pass the database session to the function
+    :return: A list of photocomment objects
+    """
+    stmt = select(PhotoComment).filter_by(photo_id=photo_id).offset(offset).limit(limit)
+    contacts = db.execute(stmt)
+    return contacts.scalars().all()

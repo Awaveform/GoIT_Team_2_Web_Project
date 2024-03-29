@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi import APIRouter, Depends, Query, status, HTTPException
 from sqlalchemy.orm import Session
 from fastapi.security import HTTPBearer
 
@@ -27,9 +27,9 @@ async def create_comment(
     The create_comment function creates a comment for a photo.
         Args:
             photo_id (int): The id of the photo to which the comment is being added.
-            body (CommentSchema): A CommentSchema object containing the new comment's details. 
+            body (CommentSchema): A CommentSchema object containing the new comment's details.
                 This includes its text, and who created it.
-    
+
     :param photo_id: int: Identify the photo that we want to comment on
     :param body: CommentSchema: Validate the request body
     :param created_by: User: Get the user that is currently logged in
@@ -53,3 +53,38 @@ async def create_comment(
             raise HTTPException(status_code=400, detail="Wrong request")
     else:
         raise HTTPException(status_code=400, detail="Comment can not be blank")
+
+
+@router.get("/{photo_id}/comments", response_model=list[CommentResponse])
+async def get_comments(
+    photo_id: int,
+    limit: int = Query(10, ge=10, le=500),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+):
+    """
+    The get_comments function returns a list of comments for the specified photo.
+    
+    :param photo_id: int: Specify the photo_id of the comments to be returned
+    :param limit: int: Limit the number of comments returned
+    :param ge: Set the minimum value for the limit parameter
+    :param le: Limit the number of comments returned to 500
+    :param offset: int: Specify the number of comments to skip
+    :param ge: Set a minimum value for the limit and offset parameters
+    :param db: Session: Get the database session
+    :param : Get the comments of a specific photo
+    :return: A list of commentresponse objects
+    """
+    comments = await repository_comments.get_comments(photo_id, limit, offset, db)
+    result = []
+    for comment in comments:
+        result.append(
+            CommentResponse(
+                comment_id=comment.id,
+                comment=comment.comment,
+                created_at=comment.created_at,
+                photo_id=comment.photo_id,
+                created_by=comment.created_by,
+            )
+        )
+    return result
