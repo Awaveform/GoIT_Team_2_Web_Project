@@ -78,7 +78,7 @@ def upload_photo_to_cloudinary(current_user: User, file: UploadFile = File()) ->
         print(public_id)
         return photo_url
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error uploading photo: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Error uploading photo: {str(e)}")
 
 
 async def create_photo(description: str, current_user: User, db: Session, file: UploadFile = File()) -> Photo:
