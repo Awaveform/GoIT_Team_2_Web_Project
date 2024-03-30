@@ -2,18 +2,22 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 import cloudinary
+import pydantic
 from fastapi import HTTPException, status
+from qrcode.image.styledpil import StyledPilImage
 from sqlalchemy.orm import Session
 
 from src.database.models import User, Photo
-from src.enums import PhotoEffect, PhotoGravity
+from src.enums import PhotoEffect, PhotoGravity, QrModuleDrawer, QrColorMask
 from src.repository.transform_photos import (
     apply_transformation,
     _save_transformed_photo_to_db,
     _update_orig_photo_with_transformed_photo,
     _create_transformed_photo_in_db,
+    generate_photo_qr_code
 )
-from src.schemas import TransformPhotoModel, BaseTransformParamsModel
+from src.schemas import TransformPhotoModel, PhotoQrCodeModel
+from src.utils.qr_code import module_drawer_map, color_mask_map
 
 
 class TestTransformPhotos(unittest.IsolatedAsyncioTestCase):
@@ -140,9 +144,8 @@ class TestTransformPhotos(unittest.IsolatedAsyncioTestCase):
         transform_body = TransformPhotoModel(
             to_override=True,
             description=transformed_photo_desc,
-            params=BaseTransformParamsModel(
-                effect=PhotoEffect.BLUR.value, gravity=PhotoGravity.FACES.value
-            ),
+            effect=PhotoEffect.BLUR.value,
+            gravity=PhotoGravity.FACES.value
         )
         transformed_photo: Photo = await apply_transformation(
             photo=orig_photo,
@@ -174,11 +177,9 @@ class TestTransformPhotos(unittest.IsolatedAsyncioTestCase):
         transform_body = TransformPhotoModel(
             to_override=False,
             description=transformed_photo_desc,
-            params=BaseTransformParamsModel(
-                effect=PhotoEffect.SEPIA.value,
-                gravity=PhotoGravity.AUTO.value,
-                angle=20,
-            ),
+            effect=PhotoEffect.SEPIA.value,
+            gravity=PhotoGravity.AUTO.value,
+            angle=20,
         )
         transformed_photo: Photo = await apply_transformation(
             photo=orig_photo,
@@ -212,11 +213,9 @@ class TestTransformPhotos(unittest.IsolatedAsyncioTestCase):
         transform_body = TransformPhotoModel(
             to_override=False,
             description=transformed_photo_desc,
-            params=BaseTransformParamsModel(
-                effect=PhotoEffect.SEPIA.value,
-                gravity=PhotoGravity.AUTO.value,
-                angle=20,
-            ),
+            effect=PhotoEffect.SEPIA.value,
+            gravity=PhotoGravity.AUTO.value,
+            angle=20,
         )
         try:
             await apply_transformation(
@@ -234,3 +233,45 @@ class TestTransformPhotos(unittest.IsolatedAsyncioTestCase):
             assert exp_http_err.detail == actual_http_err.detail
         else:
             raise AssertionError("The error wasn't raised when expected")
+
+
+class TestGenerateQrCodeForPhotos(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        self.photo_url = "https://res.cloudinary.com/image/upload/6AQ8KKI6.jpg"
+        self.photo_id = 1
+
+    async def test_generate_photo_qr_code(self):
+        photo: Photo = Photo(
+            id=self.photo_id, url=self.photo_url
+        )
+        params = [PhotoQrCodeModel(module_drawer=QrModuleDrawer.VERTICAL,
+                                   color_mask=QrColorMask.VERTICAL, box_size=10),
+                  PhotoQrCodeModel(module_drawer=QrModuleDrawer.SQUARE,
+                                   color_mask=QrColorMask.RADIAL, box_size=5),
+                  PhotoQrCodeModel(module_drawer=QrModuleDrawer.CIRCLE,
+                                   color_mask=QrColorMask.SOLID, box_size=100.5)
+                  ]
+        for param_set in params:
+            img: StyledPilImage = await generate_photo_qr_code(photo=photo,
+                                                               params=param_set)
+            assert isinstance(img, StyledPilImage)
+            assert img.box_size == param_set.box_size
+            assert isinstance(img.color_mask, color_mask_map[param_set.color_mask.value])
+            assert isinstance(img.module_drawer, module_drawer_map[
+                param_set.module_drawer.value])
+
+    async def test_generate_photo_qr_code_w_incorrect_params(self):
+        params = [{"module_drawer": "Test module drawer",
+                   "color_mask": QrColorMask.VERTICAL, "box_size": 10},
+                  {"module_drawer": QrModuleDrawer.SQUARE,
+                   "color_mask": "Test color mask", "box_size": 10},
+                  {"module_drawer": QrModuleDrawer.CIRCLE,
+                   "color_mask": QrColorMask.RADIAL, "box_size": -1},
+                  ]
+        for param_set in params:
+            try:
+                PhotoQrCodeModel(**param_set)
+            except pydantic.error_wrappers.ValidationError as err:
+                print(err)
+            else:
+                raise AssertionError("Error wasn't raised when expected")

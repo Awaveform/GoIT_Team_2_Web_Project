@@ -1,9 +1,19 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Annotated
+
+from fastapi import Path
 from pydantic import BaseModel, Field, PositiveInt
 
-from src.enums import Roles
+from src.enums import (
+    Roles,
+    QrModuleDrawer,
+    QrColorMask,
+    PhotoEffect,
+    PhotoCrop,
+    PhotoGravity,
+)
 
 
 class BaseUserModel(BaseModel):
@@ -60,20 +70,15 @@ class PhotoResponse(PhotoBase):
     created_at: datetime
 
 
-
-class BaseTransformParamsModel(BaseModel):
-    effect: str | None
-    angle: PositiveInt | None
-    crop: str | None
-    gravity: str | None
-    width: PositiveInt | None
-    height: PositiveInt | None
-
-
 class TransformPhotoModel(BaseModel):
-    to_override: bool
-    description: str
-    params: BaseTransformParamsModel
+    to_override: bool = False
+    description: str = Field(min_length=5, title="Photo description")
+    effect: PhotoEffect | None = PhotoEffect.BLUR.value
+    angle: Annotated[int, Path(title="Angle of photo rotation", gt=0, le=360)] | None
+    crop: PhotoCrop | None = PhotoCrop.FILL.value
+    gravity: PhotoGravity | None = PhotoGravity.AUTO.value
+    width: Annotated[int, Path(title="Photo width", gt=0, le=1000)] | None
+    height: Annotated[int, Path(title="Photo height", gt=0, le=1000)] | None
 
 
 class TransformedPhotoModelResponse(BaseModel):
@@ -89,3 +94,13 @@ class TransformedPhotoModelResponse(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class PhotoQrCodeModel(BaseModel):
+    module_drawer: QrModuleDrawer = QrModuleDrawer.ROUNDED
+    color_mask: QrColorMask = QrColorMask.SOLID
+    box_size: Annotated[int, Path(title="QR code box size", gt=0)] = 10
+
+
+class PhotoQrCodeModelResponse(BaseModel):
+    qr_code: str

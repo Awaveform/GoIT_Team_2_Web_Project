@@ -5,17 +5,23 @@ from typing import Type
 import cloudinary
 from cloudinary import uploader
 from fastapi import HTTPException, status
+from qrcode.image.styledpil import StyledPilImage
 from sqlalchemy.orm import Session
 import uuid
 
 from src.conf.config import settings
 from src.database.models import Photo
-from src.schemas import TransformPhotoModel
+from src.schemas import TransformPhotoModel, PhotoQrCodeModel
+from src.utils.data_convertor import get_enum_value
+from src.utils.qr_code import generate_qr_code
 
 
 async def _update_orig_photo_with_transformed_photo(
-    db: Session, orig_photo: Photo, photo_url: str, updated_by: int, photo_description:
-        str
+    db: Session,
+    orig_photo: Photo,
+    photo_url: str,
+    updated_by: int,
+    photo_description: str,
 ):
     """
     Method updates the original photo in the db with a transformed photo.
@@ -155,7 +161,13 @@ async def apply_transformation(
             photo.url,
             public_id=str(uuid.uuid1()),
             overwrite=body.to_override,
-            transformation=[dict(body.params)],
+            transformation=[
+                {
+                    k: get_enum_value(v)
+                    for k, v in dict(body).items()
+                    if k not in ("to_override", "description")
+                }
+            ],
         )
     except cloudinary.exceptions.Error as err:
         raise HTTPException(
@@ -170,4 +182,24 @@ async def apply_transformation(
         to_override_orig_photo=body.to_override,
         photo_description=body.description,
         orig_photo=photo,
+    )
+
+
+async def generate_photo_qr_code(
+    photo: Photo, params: PhotoQrCodeModel
+) -> StyledPilImage:
+    """
+    Method generates QR code for the photo URL.
+    :param photo: Photo instance.
+    :type photo: Photo.
+    :param params: QR code image parameters.
+    :type params: PhotoQrCodeModel.
+    :return: QR code image.
+    :rtype: StyledPilImage.
+    """
+    return generate_qr_code(
+        photo_url=photo.url,
+        module_drawer=params.module_drawer,
+        color_mask=params.color_mask,
+        box_size=params.box_size
     )
