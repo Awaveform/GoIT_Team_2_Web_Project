@@ -2,6 +2,7 @@ import unittest
 
 from unittest.mock import MagicMock
 from sqlalchemy.orm import Session
+from fastapi import HTTPException
 
 from src.repository.comments import create_comment
 from src.database.models import PhotoComment, User, Photo
@@ -30,6 +31,3 @@ class TestCreateCommentPhoto(unittest.IsolatedAsyncioTestCase):
         
         self.assertEqual(result.created_by, self.user.id)
         self.db.add.assert_called_once_with(result)
-
-        
-
