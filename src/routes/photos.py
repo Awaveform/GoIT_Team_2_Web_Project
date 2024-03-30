@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from http.client import HTTPException
-
-from fastapi import UploadFile, File, status
+from fastapi import UploadFile, File, status, HTTPException
 from typing import Optional
 from sqlalchemy.orm import Session
 import redis
@@ -43,11 +41,25 @@ async def create_photo(description: Optional[str] = None, db: Session = Depends(
 
 @router.delete("/{photo_id}", response_model=PhotoResponse)
 def delete_photo(photo_id: int,
-                 db: Session = Depends(get_db)):
+                 db: Session = Depends(get_db),
+                 current_user: User = Depends(repository_users.get_current_user)):
     """
     Delete a photo from the database by its ID.
     """
-    deleted_photo = repository_photos.delete_photo_by_id(photo_id, db)
-    if not deleted_photo:
-        raise HTTPException(status_code=404, detail="Photo not found")
-    return deleted_photo
+    deleted_photo = repository_photos.delete_photo_by_id(
+        photo_id=photo_id,
+        current_user=current_user,
+        db=db)
+    if deleted_photo is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Photo not found")
+    return PhotoResponse(
+        id=deleted_photo.id,
+        url=deleted_photo.url,
+        description=deleted_photo.description,
+        created_by=deleted_photo.created_by,
+        created_at=deleted_photo.created_at,
+    )
+
+
