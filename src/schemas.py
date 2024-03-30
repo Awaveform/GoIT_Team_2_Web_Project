@@ -69,7 +69,7 @@ class PhotoResponse(PhotoBase):
 
 class TransformPhotoModel(BaseModel):
     to_override: bool = False
-    description: str = Field(min_length=5, title="Photo description")
+    description: str | None = Field(min_length=5, title="Photo description")
     effect: PhotoEffect | None = PhotoEffect.BLUR.value
     angle: int | None = Field(gt=0, le=360, title="Angle of photo rotation")
     crop: PhotoCrop | None = PhotoCrop.FILL.value
@@ -81,7 +81,7 @@ class TransformPhotoModel(BaseModel):
 class TransformedPhotoModelResponse(BaseModel):
     id: int
     url: str
-    description: str
+    description: str | None
     created_at: datetime
     updated_at: datetime | None
     created_by: int

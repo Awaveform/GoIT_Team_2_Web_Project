@@ -42,7 +42,8 @@ async def _update_orig_photo_with_transformed_photo(
     orig_photo.url = photo_url
     orig_photo.updated_by = updated_by
     orig_photo.is_transformed = True
-    orig_photo.description = photo_description
+    if photo_description:
+        orig_photo.description = photo_description
     db.add(orig_photo)
     db.commit()
     db.refresh(orig_photo)
