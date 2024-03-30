@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Annotated
 
 from fastapi import Path
-from pydantic import BaseModel, Field, PositiveInt
+from pydantic import BaseModel, Field
 
 from src.enums import (
     Roles,
@@ -104,3 +104,15 @@ class PhotoQrCodeModel(BaseModel):
 
 class PhotoQrCodeModelResponse(BaseModel):
     qr_code: str
+
+
+class RateModel(BaseModel):
+    grade: int = Field(ge=1, le=5)
+
+
+class RateModelResponse(RateModel):
+    created_at: datetime
+    updated_at: datetime | None
+
+    class Config:
+        orm_mode = True
