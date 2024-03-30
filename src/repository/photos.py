@@ -2,13 +2,11 @@ from typing import Type
 from fastapi import HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 import cloudinary.uploader
-
+import cloudinary.api
 
 from src.conf.config import settings
 from src.database.models import Photo, User
-
 import uuid
-from src.database.models import Photo
 
 
 async def get_photos_by_user_id(user_id: int, db: Session) -> list[Type[Photo]]:
@@ -42,7 +40,7 @@ async def get_photo_by_photo_id(photo_id: int, db: Session) -> Photo:
 
 
 # TODO: AR refactor -move logic and exeption to routs
-def upload_photo_to_cloudinary(current_user: User, file: UploadFile = File()) -> str:
+def _upload_photo_to_cloudinary(current_user: User, file: UploadFile = File()) -> str:
     """
     The upload_photo_to_cloudinary function uploads a photo to the cloudinary server.
     It takes in three parameters: current_user, file, and description. The current_user parameter is used to
@@ -74,8 +72,6 @@ def upload_photo_to_cloudinary(current_user: User, file: UploadFile = File()) ->
         upload_result = cloudinary.uploader.upload(file.file,
                                                    public_id=public_id)
         photo_url = upload_result['secure_url']
-        print(photo_url)
-        print(public_id)
         return photo_url
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error uploading photo: {str(e)}")
@@ -91,7 +87,7 @@ async def create_photo(description: str, current_user: User, db: Session, file: 
     :param file: UploadFile: Accept the file from the request
     :return: A photo object
     """
-    photo_url = upload_photo_to_cloudinary(current_user=current_user, file=file)
+    photo_url = _upload_photo_to_cloudinary(current_user=current_user, file=file)
     user_id = current_user.id
     photo = Photo(url=photo_url, description=description, created_by=user_id)
     db.add(photo)
@@ -100,27 +96,63 @@ async def create_photo(description: str, current_user: User, db: Session, file: 
     return photo
 
 
-def delete_photo_by_id(photo_id: int, db: Session):
-
+def _get_public_id_from_url(photo_url):
     """
-The delete_photo_by_id function deletes a photo from the database by its id.
-    Args:
-        photo_id (int): The id of the photo to be deleted.
-        db (Session): A connection to the database.
+    The _get_public_id_from_url function takes a photo_url as input and returns the public_id of that image.
+    The public id is used to delete an image from Cloudinary.
 
-:param photo_id: int: Specify the id of the photo that is to be deleted
-:param db: Session: Pass the database session to the function
-:return: True if the photo is deleted and false if it is not
-:doc-author: Trelent
-"""
-    photo = db.query(Photo).filter(Photo.id == photo_id).first()
+    :param photo_url: Get the public id of the photo
+    :return: The public id of a photo given its url
+    """
+    parts = photo_url.split('/')
+    index = parts.index('PhotoShareApp')
+    parts = parts[index:]
+    parts[-1] = parts[-1].split('.')[0]
+    public_id = '/'.join(parts)
+    return public_id
+
+
+def _delete_photo_from_cloudinary(photo_url: str):
+    """
+    The _delete_photo_from_cloudinary function takes in a photo_url parameter, which is the URL of the photo to be deleted.
+    It then uses Cloudinary's Python SDK to delete that image from Cloudinary
+    :param photo_url: str: Pass the photo url to the function
+    :return: A dictionary
+    """
+
+    cloudinary.config(
+        cloud_name=settings.cloudinary_name,
+        api_key=settings.cloudinary_api_key,
+        api_secret=settings.cloudinary_api_secret,
+        secure=True
+    )
+    public_ids = _get_public_id_from_url(photo_url)
+    image_delete_result = cloudinary.api.delete_resources(public_ids, resource_type="image", type="upload")
+    print(image_delete_result)
+
+
+def delete_photo_by_id(photo_id: int, current_user: User, db: Session):
+    """
+    The delete_photo_by_id function deletes a photo from the database.
+        Args:
+            photo_id (int): The id of the photo to be deleted.
+            current_user (User): The user who is deleting the photo. This is used for authorization purposes, as only
+                photos created by that user can be deleted by them.
+
+    :param photo_id: int: Identify the photo to be deleted
+    :param current_user: User: Make sure that the user is logged in and has access to delete a photo
+    :param db: Session: Access the database
+    :return: The photo that was deleted
+    """
+    photo = db.query(Photo).filter(Photo.id == photo_id, Photo.created_by == current_user.id).first()
+
     if photo:
+        try:
+            _delete_photo_from_cloudinary(photo_url=photo.url)
+        except Exception as e:
+            print(f"Error deleting photo from Cloudinary: {e}")
         db.delete(photo)
         db.commit()
     return photo
-
-
-
-
 
 
