@@ -22,8 +22,7 @@ async def get_photos_by_user_id(user_id: int, db: Session) -> list[Type[Photo]]:
     :return: The list of photos.
     :rtype: list[Type[Photo]]
     """
-    photos = db.query(Photo).filter(Photo.created_by == user_id).all()
-    return photos
+    return db.query(Photo).filter(Photo.created_by == user_id).all()
 
 
 async def get_photo_by_photo_id(photo_id: int, db: Session) -> Photo:
