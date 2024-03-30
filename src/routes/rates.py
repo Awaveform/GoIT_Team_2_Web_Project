@@ -2,17 +2,21 @@ from __future__ import annotations
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, status, HTTPException
 from fastapi.security import (
     HTTPBearer,
 )
 from sqlalchemy.orm import Session
 
-from src.schemas import ListRatesModelResponse
-from src.security.role_permissions import RoleChecker
+from src.database.db import get_db
+from src.database.models import User
 from src.repository import (
-    rates as repository_rates,
+    photos as repository_photos,
+    rates as repository_rates
 )
+from src.repository.users import get_current_user
+from src.schemas import ListRatesModelResponse, RateModel, RateModelResponse
+from src.security.role_permissions import RoleChecker
 
 
 router = APIRouter(prefix="/rates", tags=["rates"])
@@ -49,28 +53,6 @@ async def get_rates_by_user(
 
     rates = await repository_rates.get_rates(db=db)
     return {"rates": rates}
-from __future__ import annotations
-
-from typing import Optional
-
-from fastapi import APIRouter, Depends, status, HTTPException
-from fastapi.security import (
-    HTTPBearer,
-)
-from sqlalchemy.orm import Session
-
-from src.database.db import get_db
-from src.database.models import User
-from src.repository.users import get_current_user
-from src.schemas import RateModelResponse, RateModel
-from src.repository import (
-    rates as repository_rates,
-    photos as repository_photos
-)
-
-
-router = APIRouter(prefix="/rates", tags=["rates"])
-security = HTTPBearer()
 
 
 @router.post(
