@@ -1,9 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated
-
-from fastapi import Path
 from pydantic import BaseModel, Field
 
 from src.enums import (
@@ -74,11 +71,11 @@ class TransformPhotoModel(BaseModel):
     to_override: bool = False
     description: str = Field(min_length=5, title="Photo description")
     effect: PhotoEffect | None = PhotoEffect.BLUR.value
-    angle: Annotated[int, Path(title="Angle of photo rotation", gt=0, le=360)] | None
+    angle: int | None = Field(gt=0, le=360, title="Angle of photo rotation")
     crop: PhotoCrop | None = PhotoCrop.FILL.value
     gravity: PhotoGravity | None = PhotoGravity.AUTO.value
-    width: Annotated[int, Path(title="Photo width", gt=0, le=1000)] | None
-    height: Annotated[int, Path(title="Photo height", gt=0, le=1000)] | None
+    width: int | None = Field(title="Photo width", gt=0, le=1000)
+    height: int | None = Field(title="Photo height", gt=0, le=1000)
 
 
 class TransformedPhotoModelResponse(BaseModel):
@@ -99,7 +96,7 @@ class TransformedPhotoModelResponse(BaseModel):
 class PhotoQrCodeModel(BaseModel):
     module_drawer: QrModuleDrawer = QrModuleDrawer.ROUNDED
     color_mask: QrColorMask = QrColorMask.SOLID
-    box_size: Annotated[int, Path(title="QR code box size", gt=0)] = 10
+    box_size: int = Field(title="QR code box size", gt=0, default=10)
 
 
 class PhotoQrCodeModelResponse(BaseModel):
