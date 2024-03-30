@@ -1,6 +1,5 @@
 from __future__ import annotations
 from fastapi import status
-from typing import Optional
 from sqlalchemy.orm import Session
 import redis
 from fastapi import APIRouter, Depends, HTTPException
@@ -17,16 +16,21 @@ from src.schemas import CommentResponse, CommentSchema
 
 router = APIRouter(prefix="/photos", tags=["comments"])
 security = HTTPBearer()
-r = redis.Redis(host=settings.redis_host, port=settings.redis_port)
+r = redis.Redis(
+    host=settings.redis_host, 
+    port=settings.redis_port,
+    )
 
 
 @router.post("/{photo_id}/comments", 
              response_model=CommentResponse, 
              status_code=status.HTTP_201_CREATED)
-async def create_comment(photo_id: int,
-                         comment: CommentSchema, 
-                         current_user: User = Depends(repository_users.get_current_user),
-                         db: Session = Depends(get_db)):
+async def create_comment(
+    photo_id: int,
+    comment: CommentSchema, 
+    current_user: User = Depends(repository_users.get_current_user),
+    db: Session = Depends(get_db),
+    ):
     
     """
     The create_comment function creates a new comment for the photo with the given id.
@@ -34,34 +38,39 @@ async def create_comment(photo_id: int,
     
     
     :param photo_id: int: Get the photo that is being commented on
+    :type photo_id: int
     :param comment: CommentSchema: Validate the request body
+    :type comment: CommentSchema
     :param current_user: User: Get the user who is currently logged in
+    :type current_user: User
     :param db: Session: Create a database session
+    :type db: Session
     :return: A commentresponse object
+    :rtype: CommentResponse
     """
     photo = await repository_photos.get_photo_by_photo_id(
         photo_id=photo_id,
-        db=db
+        db=db,
     )
 
-    if photo is None:
+    if not photo:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"The photo {photo_id} does not exist."
+            detail=f"The photo {photo_id} does not exist.",
         )
 
     if not comment.comment.strip():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Comment should not be empty."
+            detail="Comment should not be empty.",
         )
-    
     
     new_comment = await repository_comments.create_comment(
         comment=comment,
         photo_id=photo_id,
         current_user=current_user,
-        db=db)
+        db=db,
+        )
     
     return CommentResponse(
         id=new_comment.id,
