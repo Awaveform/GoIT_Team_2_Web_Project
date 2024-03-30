@@ -16,7 +16,6 @@ class TestCreateCommentPhoto(unittest.IsolatedAsyncioTestCase):
         self.db = MagicMock(spec=Session)
         self.user = User(id=1)
         self.existing_photo = Photo(id=1)
-        self.absent_photo = Photo(id=0)
         self.comment = CommentSchema(comment='Test comment')
         
     async def test_create_comment_success(self):

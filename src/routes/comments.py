@@ -30,7 +30,7 @@ async def create_comment(
     comment: CommentSchema, 
     current_user: User = Depends(repository_users.get_current_user),
     db: Session = Depends(get_db),
-    ):
+):
     
     """
     The create_comment function creates a new comment for the photo with the given id.
@@ -70,7 +70,7 @@ async def create_comment(
         photo_id=photo_id,
         current_user=current_user,
         db=db,
-        )
+    )
     
     return CommentResponse(
         id=new_comment.id,
