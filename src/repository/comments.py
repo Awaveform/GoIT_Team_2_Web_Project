@@ -14,6 +14,15 @@ async def create_comment (photo_id: int,
                           current_user: User, 
                           db: Session
                           ) -> PhotoComment | None:
+    """
+    The create_comment function creates a new comment in the database.
+    
+    :param photo_id: int: Specify the id of the photo
+    :param comment: str: Specify the comment of the photo
+    :param current_user: User: Get the id of the user who is uploading a photo
+    :param db: Session: Connect to the database
+    :return: A comment object
+    """
     comment = PhotoComment(comment=comment.comment, 
                         created_at=datetime.now(), 
                         updated_at=None, 
@@ -24,14 +33,3 @@ async def create_comment (photo_id: int,
     db.refresh(comment)
     return comment
     
-
-
-    """
-    The create_photo function creates a new photo in the database.
-
-    :param description: str: Specify the description of the photo
-    :param current_user: User: Get the id of the user who is uploading a photo
-    :param db: Session: Connect to the database
-    :param file: UploadFile: Accept the file from the request
-    :return: A photo object
-    """

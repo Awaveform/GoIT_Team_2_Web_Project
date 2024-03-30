@@ -28,6 +28,17 @@ async def create_comment(photo_id: int,
                          current_user: User = Depends(repository_users.get_current_user),
                          db: Session = Depends(get_db)):
     
+    """
+    The create_comment function creates a new comment for the photo with the given id.
+        The function requires that you are logged in and that you provide a valid comment.
+    
+    
+    :param photo_id: int: Get the photo that is being commented on
+    :param comment: CommentSchema: Validate the request body
+    :param current_user: User: Get the user who is currently logged in
+    :param db: Session: Create a database session
+    :return: A commentresponse object
+    """
     photo = await repository_photos.get_photo_by_photo_id(
         photo_id=photo_id,
         db=db
