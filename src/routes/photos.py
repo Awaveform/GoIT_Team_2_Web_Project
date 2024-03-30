@@ -24,8 +24,6 @@ r = redis.Redis(host=settings.redis_host, port=settings.redis_port)
 async def create_photo(description: Optional[str] = None, db: Session = Depends(get_db),
                        current_user: User = Depends(repository_users.get_current_user),
                        file: UploadFile = File()):
-    if description is None:
-        description = ""
     new_photo = await repository_photos.create_photo(
         description=description,
         current_user=current_user,
