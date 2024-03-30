@@ -1,90 +1,62 @@
-from fastapi import APIRouter, Depends, Query, status, HTTPException
+from __future__ import annotations
+from fastapi import status
+from typing import Optional
 from sqlalchemy.orm import Session
-from fastapi.security import HTTPBearer
-
-from src.repository.users import get_current_user
+import redis
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import (HTTPBearer)
+from src.conf.config import settings
 from src.database.models import User
+from src.repository import (
+    comments as repository_comments, 
+    photos as repository_photos,
+    users as repository_users
+    )
 from src.database.db import get_db
-from src.repository import comments as repository_comments
-from src.schemas import CommentSchema, CommentResponse
+from src.schemas import CommentResponse, CommentSchema
 
-router = APIRouter(prefix="/photos", tags=["photos"])
+router = APIRouter(prefix="/photos", tags=["comments"])
 security = HTTPBearer()
+r = redis.Redis(host=settings.redis_host, port=settings.redis_port)
 
 
-@router.post(
-    "/{photo_id}/comments",
-    response_model=CommentResponse,
-    status_code=status.HTTP_201_CREATED,
-)
-async def create_comment(
-    photo_id: int,
-    body: CommentSchema,
-    created_by: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """
-    The create_comment function creates a comment for a photo.
-        Args:
-            photo_id (int): The id of the photo to which the comment is being added.
-            body (CommentSchema): A CommentSchema object containing the new comment's details.
-                This includes its text, and who created it.
+@router.post("/{photo_id}/comments", 
+             response_model=CommentResponse, 
+             status_code=status.HTTP_201_CREATED)
+async def create_comment(photo_id: int,
+                         comment: CommentSchema, 
+                         current_user: User = Depends(repository_users.get_current_user),
+                         db: Session = Depends(get_db)):
+    
+    photo = await repository_photos.get_photo_by_photo_id(
+        photo_id=photo_id,
+        db=db
+    )
 
-    :param photo_id: int: Identify the photo that we want to comment on
-    :param body: CommentSchema: Validate the request body
-    :param created_by: User: Get the user that is currently logged in
-    :param db: AsyncSession: Get the database session
-    :param : Get the user who is logged in
-    :return: Commentresponse
-    """
-    if body.comment.strip():
-        comment = await repository_comments.create_comment(
-            body, photo_id, created_by.id, db
+    if photo is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"The photo {photo_id} does not exist."
         )
-        if comment:
-            return CommentResponse(
-                comment_id=comment.id,
-                comment=comment.comment,
-                created_at=comment.created_at,
-                photo_id=comment.photo_id,
-                created_by=comment.created_by,
-            )
-        else:
-            raise HTTPException(status_code=400, detail="Wrong request")
-    else:
-        raise HTTPException(status_code=400, detail="Comment can not be blank")
 
-
-@router.get("/{photo_id}/comments", response_model=list[CommentResponse])
-async def get_comments(
-    photo_id: int,
-    limit: int = Query(10, ge=10, le=500),
-    offset: int = Query(0, ge=0),
-    db: Session = Depends(get_db),
-):
-    """
-    The get_comments function returns a list of comments for the specified photo.
-
-    :param photo_id: int: Get the comments for a specific photo
-    :param limit: int: Limit the number of comments returned
-    :param ge: Specify the minimum value of the parameter
-    :param le: Limit the number of comments that can be returned at once
-    :param offset: int: Skip the first n comments
-    :param ge: Set a minimum value for the limit and offset parameters
-    :param db: Session: Get the database session
-    :param : Limit the number of comments that are returned
-    :return: A list of commentresponse objects
-    """
-    comments = await repository_comments.get_comments(photo_id, limit, offset, db)
-    result = []
-    for comment in comments:
-        result.append(
-            CommentResponse(
-                comment_id=comment.id,
-                comment=comment.comment,
-                created_at=comment.created_at,
-                photo_id=comment.photo_id,
-                created_by=comment.created_by,
-            )
+    if not comment.comment.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Comment should not be empty."
         )
-    return result
+    
+    
+    new_comment = await repository_comments.create_comment(
+        comment=comment,
+        photo_id=photo_id,
+        current_user=current_user,
+        db=db)
+    
+    return CommentResponse(
+        id=new_comment.id,
+        comment=new_comment.comment,
+        created_at=new_comment.created_at,
+        updated_at=new_comment.updated_at,
+        photo_id=new_comment.photo_id,
+        created_by=new_comment.created_by,
+    )
