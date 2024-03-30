@@ -31,3 +31,20 @@ class PhotoGravity(enum.Enum):
     AUTO = "auto"
     CENTER = "center"
     SOUTH = "south"
+
+
+class QrModuleDrawer(enum.Enum):
+    ROUNDED = "RoundedModuleDrawer"
+    CIRCLE = "CircleModuleDrawer"
+    SQUARE = "SquareModuleDrawer"
+    GAPPED = "GappedSquareModuleDrawer"
+    HORIZONTAL = "HorizontalBarsDrawer"
+    VERTICAL = "VerticalBarsDrawer"
+
+
+class QrColorMask(enum.Enum):
+    RADIAL = "RadialGradiantColorMask"
+    SQUARE = "SquareGradiantColorMask"
+    HORIZONTAL = "HorizontalGradiantColorMask"
+    SOLID = "SolidFillColorMask"
+    VERTICAL = "VerticalGradiantColorMask"
