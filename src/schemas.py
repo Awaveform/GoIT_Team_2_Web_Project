@@ -1,15 +1,16 @@
 from __future__ import annotations
 
-import enum
 from datetime import datetime
-
 from pydantic import BaseModel, Field
 
-
-class Roles(enum.Enum):
-    ADMIN = "admin"
-    MODERATOR = "moderator"
-    USER = "user"
+from src.enums import (
+    Roles,
+    QrModuleDrawer,
+    QrColorMask,
+    PhotoEffect,
+    PhotoCrop,
+    PhotoGravity,
+)
 
 
 class BaseUserModel(BaseModel):
@@ -66,25 +67,49 @@ class PhotoResponse(PhotoBase):
     created_at: datetime
 
 
-class PhotoBase(BaseModel):
-    description: str | None = Field(max_length=500)
+class TransformPhotoModel(BaseModel):
+    to_override: bool = False
+    description: str | None = Field(min_length=5, title="Photo description")
+    effect: PhotoEffect | None = PhotoEffect.BLUR.value
+    angle: int | None = Field(gt=0, le=360, title="Angle of photo rotation")
+    crop: PhotoCrop | None = PhotoCrop.FILL.value
+    gravity: PhotoGravity | None = PhotoGravity.AUTO.value
+    width: int | None = Field(title="Photo width", gt=0, le=1000)
+    height: int | None = Field(title="Photo height", gt=0, le=1000)
 
 
-class PhotoResponse(PhotoBase):
+class TransformedPhotoModelResponse(BaseModel):
     id: int
     url: str
-    created_by: int
+    description: str | None
     created_at: datetime
+    updated_at: datetime | None
+    created_by: int
+    updated_by: int | None
+    original_photo_id: int | None
+    is_transformed: bool | None
+
+    class Config:
+        orm_mode = True
+
+
+class PhotoQrCodeModel(BaseModel):
+    module_drawer: QrModuleDrawer = QrModuleDrawer.ROUNDED
+    color_mask: QrColorMask = QrColorMask.SOLID
+    box_size: int = Field(title="QR code box size", gt=0, default=10)
+
+
+class PhotoQrCodeModelResponse(BaseModel):
+    qr_code: str
 
 
 class RateModel(BaseModel):
-    grade: int
-    
+    grade: int = Field(ge=1, le=5)
+
 
 class RateModelResponse(RateModel):
-    created_at: datetime | None
+    created_at: datetime
     updated_at: datetime | None
-    created_by: int
 
     class Config:
         orm_mode = True
