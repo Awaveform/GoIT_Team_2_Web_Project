@@ -20,7 +20,7 @@ class TestCommentPhoto(unittest.IsolatedAsyncioTestCase):
         self.comment = CommentSchema(comment='Test comment')
         self.created_at=datetime.now()
         
-        
+       
     async def test_create_comment_success(self):
 
         result: PhotoComment = await create_comment(
@@ -33,7 +33,6 @@ class TestCommentPhoto(unittest.IsolatedAsyncioTestCase):
         
         self.assertEqual(result.created_by, self.user.id)
         self.db.add.assert_called_once_with(result)
-
 
     async def test_get_comments_valid_list(self):
         expected_comments: list[PhotoComment] = [
@@ -48,9 +47,9 @@ class TestCommentPhoto(unittest.IsolatedAsyncioTestCase):
             PhotoComment(
                 id=2,
                 comment="Test comment 2",
-                created_at=datetime.now(),
+                created_at=self.created_at,
                 updated_at=None,
-                photo_id=1,
+                photo_id=self.existing_photo,
                 created_by=self.user.id,
             ),
         ]

@@ -52,11 +52,13 @@ async def get_comments(
     
     
     :param photo_id: int: Filter the comments by photo id
+    :type photo_id: int
     :param limit: int: Limit the number of comments returned
+    :type limit: int
     :param offset: int: Specify the number of records to skip before starting to return rows
+    :type offset: int
     :param db: Session: Pass the database session to the function
-    type db: Session
-    :param : Get the comments of a photo
+    :type db: Session
     :return: A list of photocomment objects
     :rtype: List[PhotoComment] 
     """

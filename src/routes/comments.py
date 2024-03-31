@@ -81,7 +81,6 @@ async def create_comment(
         created_by=new_comment.created_by,
     )
 
-
 @router.get('/{photo_id}/comments', response_model=list[CommentResponse])
 async def get_comments(
     photo_id: int, 
@@ -89,19 +88,31 @@ async def get_comments(
     offset: int = Query(0, ge=0), 
     db: Session = Depends(get_db),
     ):
+
     """
     The get_comments function returns a list of comments for the specified photo.
-        The function takes in an integer representing the photo_id, and two optional parameters: limit and offset. 
-        Limit is used to specify how many comments should be returned at once, while offset specifies where in the list of all comments to start returning from.
+        The function takes in three parameters: 
+            - photo_id (int): the id of the photo to get comments from, 
+            - limit (int): number of comments to return, default is 10 and max is 500, 
+            - offset (int): number of records to skip before returning results. Default is 0.
     
-    :param photo_id: int: Get the comments for a specific photo
+    :param photo_id: int: Specify the photo id of the comments to be returned
+    :type photo_id: int
     :param limit: int: Limit the number of comments returned
-    :param ge: Specify the minimum value of a parameter
-    :param le: Set the maximum value of limit
-    :param offset: int: Specify the offset of the comments that are returned
-    :param ge: Check if the limit is greater than or equal to 10
-    :param db: AsyncSession: Get the database session
-    :return: A list of commentresponse objects
+    :type limit: int
+    :param ge: Specify the minimum value for a parameter
+    :type ge: int
+    :param le: Specify the maximum value for a parameter
+    :type le: int
+    :param offset: int: Specify the number of comments to skip
+    :type offset: int
+    :param ge: Check if the limit parameter is greater than or equal to 10
+    :type ge: int
+    :param db: Session: Get the database session
+    :param : Specify the number of comments to be returned
+    :return: A list of comments
+    :rtype: list[CommentResponse]
+
     """
     comments = await repository_comments.get_comments(photo_id, limit, offset, db)
     if comments:
