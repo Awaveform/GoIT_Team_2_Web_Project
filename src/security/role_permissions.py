@@ -1,7 +1,9 @@
 from fastapi import Depends, HTTPException, status
 from fastapi_jwt_auth import AuthJWT
+from redis.asyncio import Redis
 from sqlalchemy.orm import Session
 
+from src.cache.async_redis import get_redis
 from src.database.db import get_db
 from src.database.models import UserRole
 from src.repository.users import get_current_user
@@ -12,7 +14,8 @@ class RoleChecker:
         self.allowed_roles = allowed_roles
 
     async def __call__(
-            self, auth: AuthJWT = Depends(), db: Session = Depends(get_db)
+            self, auth: AuthJWT = Depends(), db: Session = Depends(get_db),
+            r: Redis = Depends(get_redis)
     ):
         """
         Dependency function that checks the user's role and returns the DB
@@ -26,7 +29,7 @@ class RoleChecker:
         :return: DB session object.
         :rtype: Session.
         """
-        user = await get_current_user(auth)
+        user = await get_current_user(auth, db, r)
         user_role = (
             db.query(UserRole)
             .filter(UserRole.user_id == user.id)

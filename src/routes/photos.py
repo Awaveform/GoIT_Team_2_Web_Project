@@ -16,7 +16,6 @@ from src.schemas import PhotoResponse
 
 router = APIRouter(prefix="/photos", tags=["photos"])
 security = HTTPBearer()
-r = redis.Redis(host=settings.redis_host, port=settings.redis_port)
 
 
 @router.post("/", response_model=PhotoResponse, status_code=status.HTTP_201_CREATED)
