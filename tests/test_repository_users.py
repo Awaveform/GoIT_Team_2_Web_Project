@@ -3,7 +3,7 @@ from __future__ import annotations
 import random
 from datetime import datetime
 from typing import Type, Tuple
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, AsyncMock
 import unittest
 
 from sqlalchemy.orm import Session
@@ -23,26 +23,36 @@ from src.repository.users import (
 )
 
 
+async def async_none() -> None:
+    """
+    Method to return coroutine as a None value.
+    :return: Coroutine with None value.
+    :rtype: None.
+    """
+    return None
+
+
 class TestRolesAndUsers(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.session = MagicMock(spec=Session)
+        self.redis = AsyncMock()
         self.user = User(id=1)
 
     async def test_get_roles(self):
         for role, role_id in zip(list(Roles), [1, 2, 3]):
             expected_role = Role(name=role.value, id=role_id)
             self.session.query().filter().first.return_value = expected_role
-
-            actual_role = await get_role(_role=role, db=self.session)
+            self.redis.get.return_value = await async_none()
+            actual_role = await get_role(_role=role, db=self.session, r=self.redis)
             assert actual_role.name == expected_role.name
 
     async def test_get_user_roles(self):
         for role, user_id in zip(list(Roles), [1, 2, 3]):
             expected_role = Role(name=role.value)
             self.session.query().join().filter().first.return_value = expected_role
-
+            self.redis.get.return_value = await async_none()
             actual_role: Type[Role] = await get_user_role(
-                user_id=user_id, db=self.session
+                user_id=user_id, db=self.session, r=self.redis
             )
             assert actual_role.name == expected_role.name
 
@@ -59,14 +69,13 @@ class TestRolesAndUsers(unittest.IsolatedAsyncioTestCase):
         for user_name in user_names:
             expected_user: User = User(user_name=user_name)
             self.session.query().filter().first.return_value = expected_user
+            self.redis.get.return_value = await async_none()
             user: Type[User] = await get_user_by_user_name(
-                user_name=user_name, db=self.session
+                user_name=user_name, db=self.session, r=self.redis
             )
             assert user.user_name == user_name
 
-    @patch("redis.Redis.get")
-    async def test_create_user(self, mock_redis_get):
-        mock_redis_get.return_value = None
+    async def test_create_user(self):
         for role_name, role_id in zip(list(Roles), [1, 2, 3]):
             user: UserModel = UserModel(
                 first_name=f"Test_{role_name.value}",
@@ -77,9 +86,10 @@ class TestRolesAndUsers(unittest.IsolatedAsyncioTestCase):
 
             expected_role = Role(id=role_id, name=role_name.value)
             self.session.query().filter().first.return_value = expected_role
+            self.redis.get.return_value = await async_none()
 
             actual_user, actual_role = await create_user(
-                body=user, role=role_name, db=self.session
+                body=user, role=role_name, db=self.session, r=self.redis
             )
             assert actual_user.user_name == user.user_name
             assert actual_user.first_name == user.first_name
@@ -92,8 +102,9 @@ class TestRolesAndUsers(unittest.IsolatedAsyncioTestCase):
         for user_name in user_names:
             expected_user: User = User(user_name=user_name)
             self.session.query().filter().first.return_value = expected_user
+            self.redis.get.return_value = await async_none()
             actual_user: Tuple[User, int] = await get_full_user_info_by_name(
-                user_name=user_name, db=self.session
+                user_name=user_name, db=self.session, r=self.redis
             )
             assert actual_user[0].user_name == user_name
             assert actual_user[1] == 0

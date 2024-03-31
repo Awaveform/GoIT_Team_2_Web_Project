@@ -145,10 +145,14 @@ async def create_user(
     return new_user, new_user_role
 
 
-async def get_full_user_info_by_name(user_name: str, db: Session) -> Tuple[User, int]:
+async def get_full_user_info_by_name(
+    user_name: str, db: Session, r: Redis
+) -> Tuple[User, int]:
     """
     Method that gets information about user.
 
+    :param r: Redis instance.
+    :type r: redis.asyncio.Redis.
     :param user_name: User name.
     :type user_name: str.
     :param db: DB session object.
@@ -156,7 +160,7 @@ async def get_full_user_info_by_name(user_name: str, db: Session) -> Tuple[User,
     :return: Info about user.
     :rtype: User.
     """
-    user: User | bool = await get_user_by_user_name(user_name=user_name, db=db)
+    user: User | bool = await get_user_by_user_name(user_name=user_name, db=db, r=r)
     photos: list[Type[Photo]] = await get_photos_by_user_id(user_id=user.id, db=db)
     return user, len(photos)
 
