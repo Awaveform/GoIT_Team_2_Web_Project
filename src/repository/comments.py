@@ -1,5 +1,7 @@
 from datetime import datetime
+from typing import List
 
+from sqlalchemy import Select
 from sqlalchemy.orm import Session
 
 from src.database.models import User, PhotoComment
@@ -37,3 +39,27 @@ async def create_comment (
     db.refresh(comment)
     return comment
     
+
+async def get_comments(
+        photo_id: int, 
+        limit: int, 
+        offset: int,
+        db: Session,
+        ) -> List[PhotoComment]:
+    """
+    The get_comments function returns a list of comments for the photo with the given id.
+        The limit and offset parameters are used to paginate through results.
+    
+    
+    :param photo_id: int: Filter the comments by photo id
+    :param limit: int: Limit the number of comments returned
+    :param offset: int: Specify the number of records to skip before starting to return rows
+    :param db: Session: Pass the database session to the function
+    type db: Session
+    :param : Get the comments of a photo
+    :return: A list of photocomment objects
+    :rtype: List[PhotoComment] 
+    """
+    stmt = Select(PhotoComment).filter_by(photo_id=photo_id).offset(offset).limit(limit)
+    contacts =  db.execute(stmt)
+    return contacts.scalars().all()
