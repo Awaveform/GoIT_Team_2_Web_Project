@@ -26,7 +26,9 @@ async def get_photos_by_user_id(user_id: int, db: Session) -> list[Type[Photo]]:
     return photos
 
 
-async def get_photo_by_photo_id(photo_id: int, db: Session) -> Photo:
+async def get_photo_by_photo_id(
+        photo_id: int, db: Session,
+) -> Type[Photo] | None:
     """
     Method that returns the uploaded photo by the photo identifier.
 
