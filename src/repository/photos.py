@@ -2,13 +2,11 @@ from typing import Type
 from fastapi import HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 import cloudinary.uploader
-
+import cloudinary.api
 
 from src.conf.config import settings
-from src.database.models import Photo, User
-
+from src.database.models import Photo, User, Role
 import uuid
-from src.database.models import Photo
 
 
 async def get_photos_by_user_id(user_id: int, db: Session) -> list[Type[Photo]]:
@@ -44,7 +42,7 @@ async def get_photo_by_photo_id(
 
 
 # TODO: AR refactor -move logic and exeption to routs
-def upload_photo_to_cloudinary(current_user: User, file: UploadFile = File()) -> str:
+def _upload_photo_to_cloudinary(current_user: User, file: UploadFile = File()) -> str:
     """
     The upload_photo_to_cloudinary function uploads a photo to the cloudinary server.
     It takes in three parameters: current_user, file, and description. The current_user parameter is used to
@@ -52,11 +50,13 @@ def upload_photo_to_cloudinary(current_user: User, file: UploadFile = File()) ->
     parameter is used to upload an image from our local machine onto the cloudinary server. The description
     parameter is an optional parameter to provide additional information about the photo.
 
-    :param current_user: User: Get the username of the user who is currently logged in
-    :param file: UploadFile: Get the file uploaded by the user
+    :param current_user: Get the username of the user who is currently logged in
+    :type current_user: User
+    :param file: Get the file uploaded by the user
+    :type file: UploadFile
     :return: The url of the photo uploaded to cloudinary
+    :rtype: str
     """
-    # Перевірка формату файлу
     allowed_formats = ['jpeg', 'jpg', 'png']
     file_extension = file.filename.split('.')[-1].lower()
     if file_extension not in allowed_formats:
@@ -76,8 +76,6 @@ def upload_photo_to_cloudinary(current_user: User, file: UploadFile = File()) ->
         upload_result = cloudinary.uploader.upload(file.file,
                                                    public_id=public_id)
         photo_url = upload_result['secure_url']
-        print(photo_url)
-        print(public_id)
         return photo_url
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error uploading photo: {str(e)}")
@@ -87,13 +85,18 @@ async def create_photo(description: str, current_user: User, db: Session, file: 
     """
     The create_photo function creates a new photo in the database.
 
-    :param description: str: Specify the description of the photo
-    :param current_user: User: Get the id of the user who is uploading a photo
-    :param db: Session: Connect to the database
-    :param file: UploadFile: Accept the file from the request
+    :param description: Specify the description of the photo
+    :type description: str
+    :param current_user: Get the id of the user who is uploading a photo
+    :type current_user: User
+    :param db: Connect to the database
+    :type db: Session
+    :param file: Accept the file from the request
+    :type file: UploadFile
     :return: A photo object
+    :rtype: Photo
     """
-    photo_url = upload_photo_to_cloudinary(current_user=current_user, file=file)
+    photo_url = _upload_photo_to_cloudinary(current_user=current_user, file=file)
     user_id = current_user.id
     photo = Photo(url=photo_url, description=description, created_by=user_id)
     db.add(photo)
@@ -102,5 +105,60 @@ async def create_photo(description: str, current_user: User, db: Session, file: 
     return photo
 
 
+def _get_public_id_from_url(photo_url: str) -> str:
+    """
+    The _get_public_id_from_url function takes a photo_url as an argument and returns the public_id of that image.
+
+    :param photo_url: photo_url is a string that represents the URL of a photo on the cloudinary server
+    :type photo_url: str
+    :return: The public id of the photo
+    :rtype: str
+    """
+    parts = photo_url.split('/')
+    index = parts.index('PhotoShareApp')
+    parts = parts[index:]
+    parts[-1] = parts[-1].split('.')[0]
+    public_id = '/'.join(parts)
+    return public_id
+
+
+def _delete_photo_from_cloudinary(photo_url: str):
+    """
+    The _delete_photo_from_cloudinary function takes in a photo_url parameter, which is the URL of the photo to be deleted.
+    It then uses Cloudinary's Python SDK to delete that image from Cloudinary
+
+    :param photo_url: Pass the photo url to the function
+    :type photo_url: str
+    :return: A dictionary
+    :rtype: dict
+    """
+
+    cloudinary.config(
+        cloud_name=settings.cloudinary_name,
+        api_key=settings.cloudinary_api_key,
+        api_secret=settings.cloudinary_api_secret,
+        secure=True
+    )
+    public_ids = _get_public_id_from_url(photo_url)
+    image_delete_result = cloudinary.api.delete_resources(public_ids, resource_type="image", type="upload")
+    print(image_delete_result)
+
+
+async def delete_photo_by_id(photo_id: int, db: Session):
+    """
+    The delete_photo_by_id function deletes a photo from the database and cloudinary.
+
+    :param photo_id: Identify the photo to be deleted
+    :type photo_id: int
+    :param db: Access the database
+    :type db: Session
+    :return: The photo object
+    :rtype: Photo
+    """
+    photo = db.query(Photo).filter(Photo.id == photo_id).first()
+    _delete_photo_from_cloudinary(photo_url=photo.url)
+    db.delete(photo)
+    db.commit()
+    return photo
 
 
