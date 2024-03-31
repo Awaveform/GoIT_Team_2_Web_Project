@@ -8,6 +8,16 @@ from src.database.models import User, PhotoComment
 from src.schemas import CommentSchema
 
 async def get_comment(comment_id:int, db:Session) -> PhotoComment | None:
+    """
+    The get_comment function returns a comment object from the database.
+        
+    :param comment_id:int: Find the comment in the database
+    :type comment_id:int
+    :param db:Session: Connect to the database
+    :type db: Session
+    :return: A photocomment or none
+    :rtype: PhotoComment | None
+    """
     stmt = Select(PhotoComment).filter_by(id=comment_id)
     result = db.execute(stmt)
     comment = result.scalar_one_or_none()
@@ -56,8 +66,7 @@ async def get_comments(
     """
     The get_comments function returns a list of comments for the photo with the given id.
         The limit and offset parameters are used to paginate through results.
-    
-    
+        
     :param photo_id: int: Filter the comments by photo id
     :type photo_id: int
     :param limit: int: Limit the number of comments returned

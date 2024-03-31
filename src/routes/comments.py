@@ -91,11 +91,7 @@ async def get_comments(
 
     """
     The get_comments function returns a list of comments for the specified photo.
-        The function takes in three parameters: 
-            - photo_id (int): the id of the photo to get comments from, 
-            - limit (int): number of comments to return, default is 10 and max is 500, 
-            - offset (int): number of records to skip before returning results. Default is 0.
-    
+     
     :param photo_id: int: Specify the photo id of the comments to be returned
     :type photo_id: int
     :param limit: int: Limit the number of comments returned
@@ -109,6 +105,7 @@ async def get_comments(
     :param ge: Check if the limit parameter is greater than or equal to 10
     :type ge: int
     :param db: Session: Get the database session
+    :type db: Session
     :param : Specify the number of comments to be returned
     :return: A list of comments
     :rtype: list[CommentResponse]
