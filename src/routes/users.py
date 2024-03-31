@@ -12,12 +12,10 @@ from sqlalchemy.orm import Session
 from src.database.models import Role
 from src.schemas import UserDetailedResponse
 from src.repository import users as repository_users
-from src.conf.config import settings
 from src.security.role_permissions import RoleChecker
 
 router = APIRouter(prefix="/users", tags=["users"])
 security = HTTPBearer()
-r = redis.Redis(host=settings.redis_host, port=settings.redis_port)
 
 
 @router.get(
