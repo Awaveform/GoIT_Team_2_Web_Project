@@ -81,3 +81,41 @@ async def get_comments(
     stmt = Select(PhotoComment).filter_by(photo_id=photo_id).order_by(asc(PhotoComment.id)).offset(offset).limit(limit)
     contacts =  db.execute(stmt)
     return contacts.scalars().all()
+
+
+async def update_comment(
+        comment_id: int, 
+        photo_id: int,      
+        updated_comment: CommentSchema, 
+        current_user: User,
+        db: Session,
+        ):
+    """
+    The update_comment function updates a comment in the database.
+    
+    :param comment_id: int: Identify the comment to be updated
+    :type comment_id: int
+    :param photo_id: int: Find the comment that is associated with the photo
+    :type photo_id: int
+    :param updated_comment: CommentSchema: Pass the updated comment to the function
+    :type updated_comment: CommentSchema
+    :param current_user: User: Check if the user is logged in and has permissions to update a comment
+    :type current_user: User
+    :param db: Session: Pass in the database session
+    :param : Get the id of the comment to be deleted
+    :return: A comment object
+    :doc-author: Trelent
+    """
+    stmt = Select(PhotoComment).filter_by(id=comment_id, photo_id=photo_id, created_by=current_user.id)
+    result = db.execute(stmt)
+    comment = result.scalar_one_or_none()
+    if comment:
+        comment.id = comment_id
+        comment.comment = updated_comment.comment
+        comment.created_at = comment.created_at
+        comment.updated_at = datetime.now()
+        comment.photo_id = comment.photo_id
+        comment.created_by = comment.created_by
+        db.commit()
+        db.refresh(comment)
+    return comment

@@ -140,3 +140,67 @@ async def get_comments(
                 detail=f"The photo {photo_id} does not exist.",
             )
     return result
+
+
+@router.patch('/{photo_id}/comments')
+async def update_contact(
+    comment_id: int, 
+    photo_id: int,
+    updated_comment:CommentSchema,                      
+    current_user: User = Depends(repository_users.get_current_user),
+    db: Session = Depends(get_db)):
+
+    """
+    The update_contact function updates a comment by its id.
+    
+    :param comment_id: int: Get the comment by id
+    :type comment_id: int
+    :param photo_id: int: Check if the photo exists
+    :type photo_id: int
+    :param updated_comment:CommentSchema: Pass the updated comment to the function
+    :type updated_comment: CommentSchema
+    :param current_user: User: Get the current user
+    :type current_user: User
+    :param db: Session: Pass the database session to the function
+    :type db: Session
+    :return: A commentschema object
+    :rtype: CommentSchema
+    """
+    check_photo = await repository_photos.get_photo_by_photo_id(
+        photo_id=photo_id,
+        db=db,
+    )
+
+    if not check_photo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"The photo {photo_id} does not exist."
+        )
+
+    check_comment = await repository_comments.get_comment(comment_id, db)
+    
+    if not check_comment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail=f"No such comment to photo {photo_id}",
+        )
+    
+    if check_comment.created_by != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="Changing the comments by other users is forbidden",
+        )
+    
+    if not updated_comment.comment.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Comment should not be empty.",
+        )
+
+    comment = await repository_comments.update_comment(comment_id, 
+                                                       photo_id,
+                                                       updated_comment, 
+                                                       current_user,
+                                                       db
+                                                       )
+    return comment

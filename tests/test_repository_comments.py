@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 from sqlalchemy.orm import Session
 
 
-from src.repository.comments import create_comment, get_comments
+from src.repository.comments import create_comment, get_comments, update_comment
 from src.database.models import PhotoComment, User, Photo
 from src.schemas import CommentSchema
 
@@ -73,3 +73,27 @@ class TestCommentPhoto(unittest.IsolatedAsyncioTestCase):
 
         comments = await get_comments(photo_id=1, limit=10, offset=-10, db=self.db)
         self.assertEqual(comments, [])
+
+    async def test_update_comments_sucess(self):
+        existing_comment = PhotoComment(id=1, photo_id=1, comment='Old comment', created_at=self.created_at,
+                                        updated_at=self.created_at, created_by=self.user.id)
+
+        self.db.execute.return_value.scalar_one_or_none.return_value = existing_comment
+
+        updated_comment_data = CommentSchema(comment='Updated comment')
+        updated_comment = await update_comment(comment_id=1, photo_id=1, updated_comment=updated_comment_data,
+                                               current_user=self.user, db=self.db)
+
+        self.assertEqual(updated_comment.comment, 'Updated comment')
+        self.assertIsNotNone(updated_comment.updated_at)
+        self.assertEqual(updated_comment.updated_at, existing_comment.updated_at)
+
+    async def test_update_comment_not_found(self):
+        
+        self.db.execute.return_value.scalar_one_or_none.return_value = None
+
+        updated_comment_data = CommentSchema(comment='Updated comment')
+        updated_comment = await update_comment(comment_id=1, photo_id=1, updated_comment=updated_comment_data,
+                                               current_user=self.user, db=self.db)
+
+        self.assertIsNone(updated_comment)
