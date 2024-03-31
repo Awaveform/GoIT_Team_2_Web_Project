@@ -8,6 +8,7 @@ from fastapi_limiter import FastAPILimiter
 from starlette.responses import JSONResponse
 
 from custom_fast_api import CustomFastAPI
+from src.cache.async_redis import get_redis
 from src.conf.config import settings
 from src.routes import users, auth, photos, transform_photos, rates, comments
 
@@ -16,9 +17,7 @@ app = CustomFastAPI()
 
 @app.on_event("startup")
 async def startup():
-    r = await redis.Redis(
-        host=settings.redis_host, port=settings.redis_port, decode_responses=True
-    )
+    r = await get_redis()
     await FastAPILimiter.init(r)
 
 

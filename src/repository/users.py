@@ -3,25 +3,25 @@ from __future__ import annotations
 import pickle
 from typing import Type, Tuple
 
-import redis
 from fastapi import Depends
 from fastapi_jwt_auth import AuthJWT
+from redis.asyncio import Redis
 from sqlalchemy.orm import Session
 
-from src.conf.config import settings
+from src.cache.async_redis import get_redis
 from src.database.db import get_db
 from src.database.models import User, UserRole, Role, Photo
 from src.repository.photos import get_photos_by_user_id
 from src.schemas import UserModel, UserRoleModel
 from src.enums import Roles
 
-r = redis.Redis(host=settings.redis_host, port=settings.redis_port)
 
-
-async def get_role(_role: Roles, db: Session) -> Type[Role]:
+async def get_role(_role: Roles, db: Session, r: Redis) -> Type[Role]:
     """
     Method that gets information about role.
 
+    :param r: Redis instance.
+    :type r: redis.asyncio.Redis.
     :param _role: Role name.
     :type _role: Roles.
     :param db: DB session object.
@@ -29,20 +29,22 @@ async def get_role(_role: Roles, db: Session) -> Type[Role]:
     :return: Full role info.
     :rtype: Role.
     """
-    role = r.get(f"role:{_role}")
+    role = await r.get(f"role:{_role}")
     if role is None:
         role = db.query(Role).filter(Role.name == _role.value).first()
-        r.set(f"role:{_role}", pickle.dumps(role))
-        r.expire(f"roles", 1900)
+        await r.set(f"role:{_role}", pickle.dumps(role))
+        await r.expire(f"roles", 1900)
     else:
         role = pickle.loads(role)
     return role
 
 
-async def get_user_role(user_id: int, db: Session) -> Type[Role]:
+async def get_user_role(user_id: int, db: Session, r: Redis) -> Type[Role]:
     """
     Method that gets information about the user role.
 
+    :param r: Redis instance.
+    :type r: redis.asyncio.Redis.
     :param user_id: User identifier.
     :type user_id: int.
     :param db: DB session object.
@@ -50,12 +52,16 @@ async def get_user_role(user_id: int, db: Session) -> Type[Role]:
     :return: Role assigned to the user.
     :rtype: Role.
     """
-    role = r.get(f"user_role:{user_id}")
+    role = await r.get(f"user_role:{user_id}")
     if role is None:
-        role = db.query(Role).join(UserRole, Role.id == UserRole.role_id).filter(
-            UserRole.user_id == user_id).first()
-        r.set(f"user_role:{user_id}", pickle.dumps(role))
-        r.expire(f"user_role:{user_id}", 1900)
+        role = (
+            db.query(Role)
+            .join(UserRole, Role.id == UserRole.role_id)
+            .filter(UserRole.user_id == user_id)
+            .first()
+        )
+        await r.set(f"user_role:{user_id}", pickle.dumps(role))
+        await r.expire(f"user_role:{user_id}", 1900)
     else:
         role = pickle.loads(role)
     return role
@@ -81,7 +87,9 @@ async def assign_role_to_user(user_id: int, role: Type[Role], db: Session) -> Us
     return new_user_role
 
 
-async def get_user_by_user_name(user_name: str, db: Session) -> Type[User] | bool:
+async def get_user_by_user_name(
+    user_name: str, db: Session, r: Redis
+) -> (Type[User] | bool):
     """
     The get_user_by_email function takes in an email and a database session.
     It then checks the Redis cache for a user with that email, if it finds one, it
@@ -89,6 +97,8 @@ async def get_user_by_user_name(user_name: str, db: Session) -> Type[User] | boo
     If not, it queries the database for that user and stores them in Redis before
     returning them.
 
+    :param r: Redis instance.
+    :type r: redis.asyncio.Redis.
     :param user_name: Get the user by user_name.
     :type user_name: str.
     :param db: Connect to the database.
@@ -96,22 +106,26 @@ async def get_user_by_user_name(user_name: str, db: Session) -> Type[User] | boo
     :return: A user object if the user_name exists in the database.
     :rtype: Type[User] | bool.
     """
-    current_user = r.get(f"user:{user_name}")
+    current_user = await r.get(f"user:{user_name}")
     if current_user is None:
         current_user = db.query(User).filter(User.user_name == user_name).first()
         if current_user is None:
             return False
-        r.set(f"user:{user_name}", pickle.dumps(current_user))
-        r.expire(f"user:{user_name}", 900)
+        await r.set(f"user:{user_name}", pickle.dumps(current_user))
+        await r.expire(f"user:{user_name}", 900)
     else:
         current_user = pickle.loads(current_user)
     return current_user
 
 
-async def create_user(body: UserModel, role: Roles, db: Session) -> Tuple[User, UserRole]:
+async def create_user(
+    body: UserModel, role: Roles, db: Session, r: Redis
+) -> Tuple[User, UserRole]:
     """
     The create_user function creates a new user in the database.
 
+    :param r: Redis instance.
+    :type r: redis.asyncio.Redis.
     :param role: Role name.
     :type role: Roles.
     :param body: Create a new user object.
@@ -122,7 +136,7 @@ async def create_user(body: UserModel, role: Roles, db: Session) -> Tuple[User, 
     :rtype: User.
     """
     body_dict: dict = body.dict()
-    role: Type[Role] = await get_role(_role=role, db=db)
+    role: Type[Role] = await get_role(_role=role, db=db, r=r)
     new_user = User(**body_dict)
     db.add(new_user)
     db.commit()
@@ -131,10 +145,14 @@ async def create_user(body: UserModel, role: Roles, db: Session) -> Tuple[User, 
     return new_user, new_user_role
 
 
-async def get_full_user_info_by_name(user_name: str, db: Session) -> Tuple[User, int]:
+async def get_full_user_info_by_name(
+    user_name: str, db: Session, r: Redis
+) -> Tuple[User, int]:
     """
     Method that gets information about user.
 
+    :param r: Redis instance.
+    :type r: redis.asyncio.Redis.
     :param user_name: User name.
     :type user_name: str.
     :param db: DB session object.
@@ -142,7 +160,7 @@ async def get_full_user_info_by_name(user_name: str, db: Session) -> Tuple[User,
     :return: Info about user.
     :rtype: User.
     """
-    user: User | bool = await get_user_by_user_name(user_name=user_name, db=db)
+    user: User | bool = await get_user_by_user_name(user_name=user_name, db=db, r=r)
     photos: list[Type[Photo]] = await get_photos_by_user_id(user_id=user.id, db=db)
     return user, len(photos)
 
@@ -183,7 +201,9 @@ async def update_token(user: User, token: str | None, db: Session) -> None:
 
 
 async def get_current_user(
-    authorize: AuthJWT = Depends(), db: Session = Depends(get_db)
+    authorize: AuthJWT = Depends(),
+    db: Session = Depends(get_db),
+    r: Redis = Depends(get_redis),
 ) -> Type[User]:
     """
     The get_current_user function is a dependency that can be used to get the current
@@ -191,6 +211,7 @@ async def get_current_user(
     It will use the JWT token in the Authorization header to retrieve and return a User
     object.
 
+    :param r:
     :param authorize: Get the current user's email.
     :type authorize: AuthJWT.
     :param db: Get the database session.
@@ -202,4 +223,4 @@ async def get_current_user(
 
     user_name = authorize.get_jwt_subject()
 
-    return await get_user_by_user_name(user_name, db)
+    return await get_user_by_user_name(user_name, db, r)
