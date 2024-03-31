@@ -5,7 +5,7 @@ import cloudinary.uploader
 import cloudinary.api
 
 from src.conf.config import settings
-from src.database.models import Photo, User
+from src.database.models import Photo, User, Role
 import uuid
 
 
@@ -50,11 +50,13 @@ def _upload_photo_to_cloudinary(current_user: User, file: UploadFile = File()) -
     parameter is used to upload an image from our local machine onto the cloudinary server. The description
     parameter is an optional parameter to provide additional information about the photo.
 
-    :param current_user: User: Get the username of the user who is currently logged in
-    :param file: UploadFile: Get the file uploaded by the user
+    :param current_user: Get the username of the user who is currently logged in
+    :type current_user: User
+    :param file: Get the file uploaded by the user
+    :type file: UploadFile
     :return: The url of the photo uploaded to cloudinary
+    :rtype: str
     """
-    # Перевірка формату файлу
     allowed_formats = ['jpeg', 'jpg', 'png']
     file_extension = file.filename.split('.')[-1].lower()
     if file_extension not in allowed_formats:
@@ -83,11 +85,16 @@ async def create_photo(description: str, current_user: User, db: Session, file: 
     """
     The create_photo function creates a new photo in the database.
 
-    :param description: str: Specify the description of the photo
-    :param current_user: User: Get the id of the user who is uploading a photo
-    :param db: Session: Connect to the database
-    :param file: UploadFile: Accept the file from the request
+    :param description: Specify the description of the photo
+    :type description: str
+    :param current_user: Get the id of the user who is uploading a photo
+    :type current_user: User
+    :param db: Connect to the database
+    :type db: Session
+    :param file: Accept the file from the request
+    :type file: UploadFile
     :return: A photo object
+    :rtype: Photo
     """
     photo_url = _upload_photo_to_cloudinary(current_user=current_user, file=file)
     user_id = current_user.id
@@ -98,13 +105,14 @@ async def create_photo(description: str, current_user: User, db: Session, file: 
     return photo
 
 
-def _get_public_id_from_url(photo_url):
+def _get_public_id_from_url(photo_url: str) -> str:
     """
-    The _get_public_id_from_url function takes a photo_url as input and returns the public_id of that image.
-    The public id is used to delete an image from Cloudinary.
+    The _get_public_id_from_url function takes a photo_url as an argument and returns the public_id of that image.
 
-    :param photo_url: Get the public id of the photo
-    :return: The public id of a photo given its url
+    :param photo_url: photo_url is a string that represents the URL of a photo on the cloudinary server
+    :type photo_url: str
+    :return: The public id of the photo
+    :rtype: str
     """
     parts = photo_url.split('/')
     index = parts.index('PhotoShareApp')
@@ -118,8 +126,11 @@ def _delete_photo_from_cloudinary(photo_url: str):
     """
     The _delete_photo_from_cloudinary function takes in a photo_url parameter, which is the URL of the photo to be deleted.
     It then uses Cloudinary's Python SDK to delete that image from Cloudinary
-    :param photo_url: str: Pass the photo url to the function
+
+    :param photo_url: Pass the photo url to the function
+    :type photo_url: str
     :return: A dictionary
+    :rtype: dict
     """
 
     cloudinary.config(
@@ -133,20 +144,25 @@ def _delete_photo_from_cloudinary(photo_url: str):
     print(image_delete_result)
 
 
-def delete_photo_by_id(photo_id: int, current_user: User, db: Session):
+async def delete_photo_by_id(photo_id: int, current_user: User, db: Session):
+    from src.repository.users import get_user_role
     """
     The delete_photo_by_id function deletes a photo from the database.
-        Args:
-            photo_id (int): The id of the photo to be deleted.
-            current_user (User): The user who is deleting the photo. This is used for authorization purposes, as only
-                photos created by that user can be deleted by them.
 
-    :param photo_id: int: Identify the photo to be deleted
-    :param current_user: User: Make sure that the user is logged in and has access to delete a photo
-    :param db: Session: Access the database
+    :param photo_id: Identify the photo to be deleted
+    :type photo_id: int
+    :param current_user: Make sure that the user is logged in and has access to delete a photo
+    :type current_user: User
+    :param db: Access the database
+    :type db: Session
     :return: The photo that was deleted
+    :rtype: Photo
     """
-    photo = db.query(Photo).filter(Photo.id == photo_id, Photo.created_by == current_user.id).first()
+    current_user_role = await get_user_role(user_id=current_user.id, db=db)
+    if current_user_role.name == 'admin':
+        photo = db.query(Photo).filter(Photo.id == photo_id).first()
+    else:
+        photo = db.query(Photo).filter(Photo.id == photo_id, Photo.created_by == current_user.id).first()
 
     if photo:
         try:
