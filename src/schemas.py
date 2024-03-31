@@ -110,6 +110,7 @@ class RateModel(BaseModel):
 class RateModelResponse(RateModel):
     created_at: datetime
     updated_at: datetime | None
+    created_by: int
 
     class Config:
         orm_mode = True
@@ -121,3 +122,18 @@ class ListRatesModelResponse(BaseModel):
 
 class DeleteRatesResponse(BaseModel):
     detail: str
+
+
+class CommentSchema(BaseModel):
+    comment: str = Field(max_length=500)
+
+
+class CommentResponse(CommentSchema):
+    id: int
+    created_at: datetime
+    updated_at: datetime | None
+    photo_id: int
+    created_by: int
+
+    class Config:
+        from_attributes = True
