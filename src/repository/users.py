@@ -57,7 +57,7 @@ async def get_user_role(user_id: int, db: Session) -> Type[Role]:
         r.set(f"user_role:{user_id}", pickle.dumps(role))
         r.expire(f"user_role:{user_id}", 1900)
     else:
-        role = await pickle.loads(role)
+        role = pickle.loads(role)
     return role
 
 
