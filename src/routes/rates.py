@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import APIRouter, Depends, Query, status, HTTPException
 from fastapi.security import (
@@ -52,6 +52,7 @@ async def get_rates_by_user(
         return {"rates": rates}
 
     rates = await repository_rates.get_rates(db=db)
+
     return {"rates": rates}
 
 

@@ -119,6 +119,7 @@ class RateModelResponse(RateModel):
 class ListRatesModelResponse(BaseModel):
     rates: list[RateModelResponse]
 
+
 class CommentSchema(BaseModel):
     comment: str = Field(max_length=500)
 
