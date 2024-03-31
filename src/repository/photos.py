@@ -8,7 +8,7 @@ from src.conf.config import settings
 from src.database.models import Photo, User
 
 import uuid
-from src.database.models import Photo
+
 
 
 async def get_photos_by_user_id(user_id: int, db: Session) -> list[Type[Photo]]:
