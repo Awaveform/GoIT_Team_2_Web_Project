@@ -144,33 +144,21 @@ def _delete_photo_from_cloudinary(photo_url: str):
     print(image_delete_result)
 
 
-async def delete_photo_by_id(photo_id: int, current_user: User, db: Session):
-    from src.repository.users import get_user_role
+async def delete_photo_by_id(photo_id: int, db: Session):
     """
-    The delete_photo_by_id function deletes a photo from the database.
+    The delete_photo_by_id function deletes a photo from the database and cloudinary.
 
     :param photo_id: Identify the photo to be deleted
     :type photo_id: int
-    :param current_user: Make sure that the user is logged in and has access to delete a photo
-    :type current_user: User
     :param db: Access the database
     :type db: Session
-    :return: The photo that was deleted
+    :return: The photo object
     :rtype: Photo
     """
-    current_user_role = await get_user_role(user_id=current_user.id, db=db)
-    if current_user_role.name == 'admin':
-        photo = db.query(Photo).filter(Photo.id == photo_id).first()
-    else:
-        photo = db.query(Photo).filter(Photo.id == photo_id, Photo.created_by == current_user.id).first()
-
-    if photo:
-        try:
-            _delete_photo_from_cloudinary(photo_url=photo.url)
-        except Exception as e:
-            print(f"Error deleting photo from Cloudinary: {e}")
-        db.delete(photo)
-        db.commit()
+    photo = db.query(Photo).filter(Photo.id == photo_id).first()
+    _delete_photo_from_cloudinary(photo_url=photo.url)
+    db.delete(photo)
+    db.commit()
     return photo
 
 
