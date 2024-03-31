@@ -1,11 +1,18 @@
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import Select
+from sqlalchemy import Select, asc
 from sqlalchemy.orm import Session
 
 from src.database.models import User, PhotoComment
 from src.schemas import CommentSchema
+
+async def get_comment(comment_id:int, db:Session) -> PhotoComment | None:
+    stmt = Select(PhotoComment).filter_by(id=comment_id)
+    result = db.execute(stmt)
+    comment = result.scalar_one_or_none()
+    return comment
+
 
 async def create_comment (
         photo_id: int, 
@@ -62,6 +69,6 @@ async def get_comments(
     :return: A list of photocomment objects
     :rtype: List[PhotoComment] 
     """
-    stmt = Select(PhotoComment).filter_by(photo_id=photo_id).offset(offset).limit(limit)
+    stmt = Select(PhotoComment).filter_by(photo_id=photo_id).order_by(asc(PhotoComment.id)).offset(offset).limit(limit)
     contacts =  db.execute(stmt)
     return contacts.scalars().all()

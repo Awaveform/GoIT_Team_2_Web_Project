@@ -123,6 +123,7 @@ async def get_comments(
                     id=comment.id,
                     comment=comment.comment,
                     created_at= comment.created_at,
+                    updated_at= comment.updated_at,
                     photo_id= comment.photo_id,
                     created_by= comment.created_by,
                     )
