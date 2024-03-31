@@ -1,9 +1,16 @@
 from __future__ import annotations
 
 from datetime import datetime
-from pydantic import BaseModel, Field, PositiveInt
+from pydantic import BaseModel, Field
 
-from src.enums import Roles
+from src.enums import (
+    Roles,
+    QrModuleDrawer,
+    QrColorMask,
+    PhotoEffect,
+    PhotoCrop,
+    PhotoGravity,
+)
 
 
 class BaseUserModel(BaseModel):
@@ -60,25 +67,21 @@ class PhotoResponse(PhotoBase):
     created_at: datetime
 
 
-class BaseTransformParamsModel(BaseModel):
-    effect: str | None
-    angle: PositiveInt | None
-    crop: str | None
-    gravity: str | None
-    width: PositiveInt | None
-    height: PositiveInt | None
-
-
 class TransformPhotoModel(BaseModel):
-    to_override: bool
-    description: str
-    params: BaseTransformParamsModel
+    to_override: bool = False
+    description: str | None = Field(min_length=5, title="Photo description")
+    effect: PhotoEffect | None = PhotoEffect.BLUR.value
+    angle: int | None = Field(gt=0, le=360, title="Angle of photo rotation")
+    crop: PhotoCrop | None = PhotoCrop.FILL.value
+    gravity: PhotoGravity | None = PhotoGravity.AUTO.value
+    width: int | None = Field(title="Photo width", gt=0, le=1000)
+    height: int | None = Field(title="Photo height", gt=0, le=1000)
 
 
 class TransformedPhotoModelResponse(BaseModel):
     id: int
     url: str
-    description: str
+    description: str | None
     created_at: datetime
     updated_at: datetime | None
     created_by: int
@@ -90,6 +93,16 @@ class TransformedPhotoModelResponse(BaseModel):
         orm_mode = True
 
 
+class PhotoQrCodeModel(BaseModel):
+    module_drawer: QrModuleDrawer = QrModuleDrawer.ROUNDED
+    color_mask: QrColorMask = QrColorMask.SOLID
+    box_size: int = Field(title="QR code box size", gt=0, default=10)
+
+
+class PhotoQrCodeModelResponse(BaseModel):
+    qr_code: str
+
+
 class RateModel(BaseModel):
     grade: int = Field(ge=1, le=5)
 
@@ -97,6 +110,26 @@ class RateModel(BaseModel):
 class RateModelResponse(RateModel):
     created_at: datetime
     updated_at: datetime | None
+    created_by: int
 
     class Config:
         orm_mode = True
+
+
+class ListRatesModelResponse(BaseModel):
+    rates: list[RateModelResponse]
+
+
+class CommentSchema(BaseModel):
+    comment: str = Field(max_length=500)
+
+
+class CommentResponse(CommentSchema):
+    id: int
+    created_at: datetime
+    updated_at: datetime | None
+    photo_id: int
+    created_by: int
+
+    class Config:
+        from_attributes = True

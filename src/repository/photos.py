@@ -25,7 +25,9 @@ async def get_photos_by_user_id(user_id: int, db: Session) -> list[Type[Photo]]:
     return db.query(Photo).filter(Photo.created_by == user_id).all()
 
 
-async def get_photo_by_photo_id(photo_id: int, db: Session) -> Photo:
+async def get_photo_by_photo_id(
+        photo_id: int, db: Session,
+) -> Type[Photo] | None:
     """
     Method that returns the uploaded photo by the photo identifier.
 
@@ -77,7 +79,7 @@ def upload_photo_to_cloudinary(current_user: User, file: UploadFile = File()) ->
         print(public_id)
         return photo_url
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error uploading photo: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Error uploading photo: {str(e)}")
 
 
 async def create_photo(description: str, current_user: User, db: Session, file: UploadFile = File()) -> Photo:
