@@ -1,12 +1,20 @@
+from io import BytesIO
 from typing import Type
 
 from fastapi import APIRouter, status, Depends, HTTPException
+from qrcode.image.styledpil import StyledPilImage
 from sqlalchemy.orm import Session
+from starlette.responses import StreamingResponse
 
 from src.database.db import get_db
 from src.database.models import Photo, User
 from src.repository.users import get_current_user
-from src.schemas import TransformedPhotoModelResponse, TransformPhotoModel
+from src.schemas import (
+    TransformedPhotoModelResponse,
+    TransformPhotoModel,
+    PhotoQrCodeModel,
+    PhotoQrCodeModelResponse,
+)
 from src.repository import transform_photos as repository_transform
 from src.repository import photos as repository_photos
 
@@ -19,9 +27,10 @@ router = APIRouter(prefix="/transform", tags=["transform"])
     status_code=status.HTTP_201_CREATED,
 )
 async def transform_photo(
-    body: TransformPhotoModel,
-    photo_id, db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    photo_id: int,
+    body: TransformPhotoModel = Depends(),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Method makes photo transformation with storing data to DB.
@@ -58,3 +67,40 @@ async def transform_photo(
         original_photo_id=transformed_photo.original_photo_id,
         is_transformed=transformed_photo.is_transformed,
     )
+
+
+@router.post(
+    "/{photo_id}/qr_code",
+    response_model=PhotoQrCodeModelResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def get_photo_url_qr_code(
+    photo_id: int,
+    body: PhotoQrCodeModel = Depends(),
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    """
+    Method generates QR code with an embedded link inside it.
+
+    :param photo_id: Photo identifier.
+    :type photo_id: int.
+    :param body: QR code params.
+    :type body: PhotoQrCodeModel
+    :param db: DB session instance.
+    :type db: Session.
+    :param _: Authorized user info.
+    :type _: User.
+    :return: QR code image.
+    :rtype: StreamingResponse.
+    """
+    photo: Photo = await repository_photos.get_photo_by_photo_id(
+        photo_id=photo_id, db=db
+    )
+    img: StyledPilImage = await repository_transform.generate_photo_qr_code(
+        photo=photo, params=body
+    )
+    img_bytes = BytesIO()
+    img.save(img_bytes, format="JPEG")
+    img_bytes.seek(0)
+    return StreamingResponse(img_bytes, media_type="image/jpeg")

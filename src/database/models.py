@@ -65,7 +65,7 @@ class Photo(Base):
     __tablename__ = "photos"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     url: Mapped[str] = mapped_column(String(1000))
-    description: Mapped[str] = mapped_column(String(500))
+    description: Mapped[str] = mapped_column(String(500), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, nullable=True, onupdate=func.now()
