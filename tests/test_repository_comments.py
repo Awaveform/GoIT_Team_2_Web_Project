@@ -6,11 +6,18 @@ from sqlalchemy.orm import Session
 
 
 from src.repository.comments import create_comment, get_comments
+
+from unittest.mock import MagicMock
+from sqlalchemy.orm import Session
+from fastapi import HTTPException
+
+from src.repository.comments import create_comment
 from src.database.models import PhotoComment, User, Photo
 from src.schemas import CommentSchema
 
 
 class TestCommentPhoto(unittest.IsolatedAsyncioTestCase):
+class TestCreateCommentPhoto(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):
 
@@ -19,7 +26,7 @@ class TestCommentPhoto(unittest.IsolatedAsyncioTestCase):
         self.existing_photo = Photo(id=1)
         self.comment = CommentSchema(comment='Test comment')
         self.created_at=datetime.now()
-        
+
         
     async def test_create_comment_success(self):
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 from fastapi import Query, status
+from fastapi import status
 from sqlalchemy.orm import Session
 import redis
 from fastapi import APIRouter, Depends, HTTPException
@@ -84,16 +85,16 @@ async def create_comment(
 
 @router.get('/{photo_id}/comments', response_model=list[CommentResponse])
 async def get_comments(
-    photo_id: int, 
-    limit: int = Query(10, ge=10, le=500), 
-    offset: int = Query(0, ge=0), 
+    photo_id: int,
+    limit: int = Query(10, ge=10, le=500),
+    offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
     ):
     """
     The get_comments function returns a list of comments for the specified photo.
-        The function takes in an integer representing the photo_id, and two optional parameters: limit and offset. 
+        The function takes in an integer representing the photo_id, and two optional parameters: limit and offset.
         Limit is used to specify how many comments should be returned at once, while offset specifies where in the list of all comments to start returning from.
-    
+
     :param photo_id: int: Get the comments for a specific photo
     :param limit: int: Limit the number of comments returned
     :param ge: Specify the minimum value of a parameter
@@ -115,9 +116,9 @@ async def get_comments(
                     photo_id= comment.photo_id,
                     created_by= comment.created_by,
                     )
-                )         
+                )
     else:
-        #checks offset parameter 
+        #checks offset parameter
         offset = 0
         comments = await repository_comments.get_comments(photo_id, limit, offset, db)
         if comments:
@@ -125,7 +126,7 @@ async def get_comments(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Number of comments for the photo {photo_id} is less than specified in offset parameter.",
         )
-        else: 
+        else:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"The photo {photo_id} does not exist.",
