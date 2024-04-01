@@ -2,14 +2,17 @@ from __future__ import annotations
 
 from fastapi import UploadFile, File, status, HTTPException
 from typing import Optional
+
+from redis.asyncio import Redis
 from sqlalchemy.orm import Session
 import redis
 from fastapi import APIRouter, Depends
 from fastapi.security import (
     HTTPBearer,
 )
-from src.conf.config import settings
-from src.database.models import User, Role
+
+from src.cache.async_redis import get_redis
+from src.database.models import User
 from src.repository import users as repository_users
 from src.repository import photos as repository_photos
 from src.database.db import get_db
@@ -41,9 +44,11 @@ async def create_photo(description: Optional[str] = None, db: Session = Depends(
 @router.delete("/{photo_id}", response_model=PhotoResponse)
 async def delete_photo(photo_id: int,
                        db: Session = Depends(get_db),
-                       current_user: User = Depends(repository_users.get_current_user)):
+                       current_user: User = Depends(repository_users.get_current_user),
+                       r: Redis = Depends(get_redis)):
 
-    current_user_role = await repository_users.get_user_role(user_id=current_user.id, db=db)
+    current_user_role = await repository_users.get_user_role(
+        user_id=current_user.id, db=db, r=r)
 
     photo = await repository_photos.get_photo_by_photo_id(
         photo_id=photo_id,
@@ -57,8 +62,7 @@ async def delete_photo(photo_id: int,
 
     if current_user_role.name == 'admin' or photo.created_by == current_user.id:
         deleted_photo = await repository_photos.delete_photo_by_id(
-            photo_id=photo_id,
-            db=db)
+            photo=photo, db=db)
     else:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
