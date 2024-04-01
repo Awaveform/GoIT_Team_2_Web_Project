@@ -63,24 +63,13 @@ class TestPhotos(unittest.IsolatedAsyncioTestCase):
                 await create_photo(description='Test photo', current_user=current_user, db=self.session, file=file)
 
     async def test_delete_photo_by_id(self):
-        photo_id = 1
         current_user = User(user_name='test_user', id=1)
-        photo = Photo(id=photo_id, url='https://example.com/photo.jpg', created_by=current_user.id)
+        photo = Photo(id=self.photo_id, url=self.photo_url,
+                      created_by=current_user.id)
         self.session.query().filter().first.return_value = photo
 
         with patch('src.repository.photos._delete_photo_from_cloudinary') as mock_delete_photo_from_cloudinary:
-            deleted_photo = delete_photo_by_id(photo_id=photo_id, current_user=current_user, db=self.session)
+            deleted_photo = await delete_photo_by_id(photo=photo, db=self.session)
 
             self.assertEqual(deleted_photo, photo)
             mock_delete_photo_from_cloudinary.assert_called_once_with(photo_url=photo.url)
-
-    async def test_delete_photo_by_id_photo_not_found(self):
-        photo_id = 1
-        current_user = User(user_name='test_user', id=1)
-        self.session.query().filter().first.return_value = None
-
-        with patch('src.repository.photos._delete_photo_from_cloudinary') as mock_delete_photo_from_cloudinary:
-            deleted_photo = delete_photo_by_id(photo_id=photo_id, current_user=current_user, db=self.session)
-
-            self.assertIsNone(deleted_photo)
-            mock_delete_photo_from_cloudinary.assert_not_called()
