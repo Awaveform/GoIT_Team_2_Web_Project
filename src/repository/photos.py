@@ -145,18 +145,17 @@ def _delete_photo_from_cloudinary(photo_url: str):
     print(image_delete_result)
 
 
-async def delete_photo_by_id(photo_id: int, db: Session):
+async def delete_photo_by_id(photo: Photo, db: Session):
     """
     The delete_photo_by_id function deletes a photo from the database and cloudinary.
 
-    :param photo_id: Identify the photo to be deleted
-    :type photo_id: int
+    :param photo: Photo to be deleted
+    :type photo: Photo
     :param db: Access the database
     :type db: Session
     :return: The photo object
     :rtype: Photo
     """
-    photo = db.query(Photo).filter(Photo.id == photo_id).first()
     _delete_photo_from_cloudinary(photo_url=photo.url)
     db.delete(photo)
     db.commit()
