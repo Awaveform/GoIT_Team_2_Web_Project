@@ -2,7 +2,7 @@ from typing import Type
 from fastapi import HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 import cloudinary.uploader
-
+import cloudinary.api
 
 from src.conf.config import settings
 from src.database.models import Photo, User
@@ -11,10 +11,14 @@ import uuid
 from src.database.models import Photo
 
 
-async def get_photos_by_user_id(user_id: int, db: Session) -> list[Type[Photo]]:
+async def get_photos_by_user_id(skip, limit, user_id: int, db: Session) -> list[Type[Photo]]:
     """
     Method that returns the list of uploaded photos by the specific user.
 
+    :param skip: Number of photos to skip.
+    :type skip: int.
+    :param limit: Number of photos to return.
+    :type limit: int.
     :param user_id: User identifier.
     :type user_id: int.
     :param db: db session object.
@@ -22,11 +26,10 @@ async def get_photos_by_user_id(user_id: int, db: Session) -> list[Type[Photo]]:
     :return: The list of photos.
     :rtype: list[Type[Photo]]
     """
-    return db.query(Photo).filter(Photo.created_by == user_id).all()
+    return db.query(Photo).filter(Photo.created_by == user_id).offset(skip).limit(limit).all()
 
 
-async def get_photo_by_photo_id(
-        photo_id: int, db: Session):
+async def get_photo_by_photo_id(photo_id: int, db: Session):
     """
     Method that returns the uploaded photo by the photo identifier.
 
@@ -37,8 +40,23 @@ async def get_photo_by_photo_id(
     :return: Photo.
     :rtype: Photo
     """
-    photo = db.query(Photo).filter(Photo.id == photo_id).first()
-    return photo
+    return db.query(Photo).filter(Photo.id == photo_id).first()
+
+
+async def get_photo_by_photo_id_and_user_id(photo_id: int, user_id: int, db: Session):
+    """
+    Method that returns the uploaded photo by the photo identifier.
+
+    :param photo_id: Photo identifier.
+    :type photo_id: int.
+    :param user_id: User identifier.
+    :type user_id: int.
+    :param db: db session object.
+    :rtype db: Session.
+    :return: Photo.
+    :rtype: Photo
+    """
+    return db.query(Photo).filter(Photo.id == photo_id, Photo.created_by == user_id).first()
 
 
 # TODO: AR refactor -move logic and exeption to routs

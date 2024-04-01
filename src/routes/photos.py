@@ -3,7 +3,7 @@ from fastapi import UploadFile, File, status, HTTPException
 from typing import Optional
 
 from redis.asyncio import Redis
-from typing import Optional, List
+from typing import Optional, List, Union
 from sqlalchemy.orm import Session
 import redis
 from fastapi import APIRouter, Depends
@@ -25,19 +25,41 @@ router = APIRouter(prefix="/photos", tags=["photos"])
 security = HTTPBearer()
 
 
-@router.get("/{photo_id}", response_model=PhotoResponse)
-async def get_photo(photo_id: int,
-                    db: Session = Depends(get_db)):
-    photo = await repository_photos.get_photo_by_photo_id(photo_id, db)
-    if not photo:
-        raise HTTPException(status_code=404, detail="Photo not found")
-    return PhotoResponse(
-        id=photo.id,
-        url=photo.url,
-        description=photo.description,
-        created_by=photo.created_by,
-        created_at=photo.created_at,
-    )
+@router.get("/", response_model=Union[List[PhotoResponse], PhotoResponse])
+async def get_photos_by_user_id_or_all(
+        db: Session = Depends(get_db),
+        user_id: Optional[int] = None,
+        photo_id: Optional[int] = None,
+        limit: int = 10,
+        skip: int = 0):
+
+    if user_id and photo_id:
+        photos = await repository_photos.get_photo_by_photo_id_and_user_id(
+            user_id=user_id, photo_id=photo_id, db=db)
+        if photos is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Photo with photo_id - {photo_id} for user- {user_id} not found")
+
+    if user_id and photo_id is None:
+        photos = await repository_photos.get_photos_by_user_id(
+            user_id=user_id, db=db, limit=limit, skip=skip)
+        if not photos:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Photos for {user_id} not found")
+
+    if user_id is None and photo_id:
+        photos = await repository_photos.get_photo_by_photo_id(
+            photo_id=photo_id, db=db)
+        if photos is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Photo with photo_id -{photo_id} not found")
+
+    if user_id is None and photo_id is None:
+        raise HTTPException(status_code=400, detail="Both user_id and photo_id cannot be None.")
+    return photos
 
 
 @router.post("/", response_model=PhotoResponse, status_code=status.HTTP_201_CREATED)
