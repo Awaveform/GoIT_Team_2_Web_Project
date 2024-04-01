@@ -54,7 +54,7 @@ async def transform_photo(
             detail=f"Photo with id {photo_id} wasn't found",
         )
     transformed_photo: Type[Photo] = await repository_transform.apply_transformation(
-        photo=photo, updated_by=current_user.id, body=body, db=db
+        photo=photo, updated_by=current_user, body=body, db=db
     )
     return TransformedPhotoModelResponse(
         id=transformed_photo.id,
