@@ -66,6 +66,9 @@ class PhotoResponse(PhotoBase):
     created_by: int
     created_at: datetime
 
+    class Config:
+        orm_mode = True
+
 
 class TransformPhotoModel(BaseModel):
     to_override: bool = False

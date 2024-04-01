@@ -26,8 +26,7 @@ async def get_photos_by_user_id(user_id: int, db: Session) -> list[Type[Photo]]:
 
 
 async def get_photo_by_photo_id(
-        photo_id: int, db: Session,
-) -> Type[Photo] | None:
+        photo_id: int, db: Session):
     """
     Method that returns the uploaded photo by the photo identifier.
 
@@ -145,7 +144,7 @@ def _delete_photo_from_cloudinary(photo_url: str):
     print(image_delete_result)
 
 
-async def delete_photo_by_id(photo: Photo, db: Session):
+async def delete_photo(photo: Photo, db: Session):
     """
     The delete_photo_by_id function deletes a photo from the database and cloudinary.
 

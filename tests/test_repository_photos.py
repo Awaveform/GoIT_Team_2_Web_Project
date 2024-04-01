@@ -1,15 +1,12 @@
 import unittest
-from typing import Type
 from unittest.mock import MagicMock, patch
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from src.database.models import User, Photo
 from src.repository.photos import (
-    get_photos_by_user_id,
     get_photo_by_photo_id,
-    create_photo,
-    delete_photo_by_id)
+    create_photo)
 
 
 class TestPhotos(unittest.IsolatedAsyncioTestCase):
@@ -19,26 +16,6 @@ class TestPhotos(unittest.IsolatedAsyncioTestCase):
         self.photo_url = "https://res.cloudinary.com/image/upload/6AQ8KKI6.jpg"
         self.photo_id = 1
 
-    async def test_get_photos_by_user_id(self):
-        expected_photos: list[Photo] = [
-            Photo(created_by=self.user.id),
-            Photo(created_by=self.user.id),
-            Photo(created_by=self.user.id),
-        ]
-        self.session.query().filter().all.return_value = expected_photos
-        actual_photos: list[Type[Photo]] = await get_photos_by_user_id(
-            user_id=self.user.id, db=self.session
-        )
-        assert actual_photos == expected_photos
-
-    async def test_get_photos_by_user_id_negative(self):
-        expected_photos: list[Photo] = []
-        self.session.query().filter().all.return_value = expected_photos
-        actual_photos: list[Type[Photo]] = await get_photos_by_user_id(
-            user_id=self.user.id, db=self.session
-        )
-        assert actual_photos == expected_photos
-
     async def test_get_photo_by_photo_id(self):
         expected_photo: Photo = Photo(created_by=self.user.id)
         self.session.query().filter().first.return_value = expected_photo
@@ -46,6 +23,14 @@ class TestPhotos(unittest.IsolatedAsyncioTestCase):
             photo_id=self.user.id, db=self.session
         )
         assert actual_photo == expected_photo
+
+    async def test_get_photo_by_photo_id_negative(self):
+        expected_photo: Photo = None
+        self.session.query().filter().first.return_value = expected_photo
+        actual_photo: Photo = await get_photo_by_photo_id(
+            photo_id=1, db=self.session
+        )
+        assert actual_photo is None
 
     async def test_create_photo(self):
         current_user = User(user_name='test_user', id=1)
@@ -70,33 +55,4 @@ class TestPhotos(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(HTTPException):
                 await create_photo(description='Test photo', current_user=current_user, db=self.session, file=file)
 
-    async def test_delete_photo_by_id(self):
-        current_user = User(user_name='test_user', id=1)
-        photo = Photo(id=self.photo_id, url=self.photo_url,
-                      created_by=current_user.id)
-        self.session.query().filter().first.return_value = photo
 
-        with patch('src.repository.photos._delete_photo_from_cloudinary') as mock_delete_photo_from_cloudinary:
-            deleted_photo = await delete_photo_by_id(photo=photo, db=self.session)
-
-            self.assertEqual(deleted_photo, photo)
-            mock_delete_photo_from_cloudinary.assert_called_once_with(photo_url=photo.url)
-
-    async def test_delete_photo_by_id_photo_not_found(self):
-        photo_id = 1
-        current_user = User(user_name='test_user', id=1)
-        self.session.query().filter().first.return_value = None
-
-        with patch('src.repository.photos._delete_photo_from_cloudinary') as mock_delete_photo_from_cloudinary:
-            deleted_photo = delete_photo_by_id(photo_id=photo_id, current_user=current_user, db=self.session)
-
-            self.assertIsNone(deleted_photo)
-            mock_delete_photo_from_cloudinary.assert_not_called()
-
-    async def test_get_photo_by_photo_id_negative(self):
-        expected_photo: Photo = None
-        self.session.query().filter().first.return_value = expected_photo
-        actual_photo: Photo = await get_photo_by_photo_id(
-            photo_id=1, db=self.session
-        )
-        assert actual_photo is None

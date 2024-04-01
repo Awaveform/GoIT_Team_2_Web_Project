@@ -25,23 +25,6 @@ router = APIRouter(prefix="/photos", tags=["photos"])
 security = HTTPBearer()
 
 
-@router.get("/userID/{user_id}", response_model=List[PhotoResponse])
-async def get_users_photos_by_id(user_id: int, db: Session = Depends(get_db)):
-    photos = await repository_photos.get_photos_by_user_id(user_id, db)
-    if not photos:
-        raise HTTPException(status_code=404, detail="No photos found for the user")
-    photo_responses = []
-    for photo in photos:
-        photo_responses.append(PhotoResponse(
-            id=photo.id,
-            url=photo.url,
-            description=photo.description,
-            created_by=photo.created_by,
-            created_at=photo.created_at,
-        ))
-    return photo_responses
-
-
 @router.get("/{photo_id}", response_model=PhotoResponse)
 async def get_photo(photo_id: int,
                     db: Session = Depends(get_db)):
@@ -96,7 +79,7 @@ async def delete_photo(photo_id: int,
             detail="Photo not found")
 
     if current_user_role.name == 'admin' or photo.created_by == current_user.id:
-        deleted_photo = await repository_photos.delete_photo_by_id(
+        deleted_photo = await repository_photos.delete_photo(
             photo=photo, db=db)
     else:
         raise HTTPException(
