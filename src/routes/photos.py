@@ -28,12 +28,12 @@ security = HTTPBearer()
 
 
 @router.get("/", response_model=Union[List[PhotoResponse], PhotoResponse])
-async def get_photos_by_user_id_or_all(
+async def get_photos(
         db: Session = Depends(get_db),
         user_id: Optional[int] = None,
         photo_id: Optional[int] = None,
         limit: int = Query(100, gt=0, le=1000),
-        skip: int = Query(0, gt=0, le=1000)):
+        skip: int = Query(0, ge=0)):
 
     if user_id and photo_id:
         photos = await repository_photos.get_photo_by_photo_id_and_user_id(
