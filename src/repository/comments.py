@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from src.database.models import User, PhotoComment
 from src.schemas import CommentSchema
 
-async def get_comment(comment_id:int, db:Session) -> PhotoComment | None:
+async def get_comment(comment_id:int, photo_id: int, db:Session) -> PhotoComment | None:
     """
     The get_comment function returns a comment object from the database.
         
@@ -18,7 +18,7 @@ async def get_comment(comment_id:int, db:Session) -> PhotoComment | None:
     :return: A photocomment or none
     :rtype: PhotoComment | None
     """
-    db_request = Select(PhotoComment).filter_by(id=comment_id)
+    db_request = Select(PhotoComment).filter_by(id=comment_id, photo_id=photo_id)
     result = db.execute(db_request)
     comment = result.scalar_one_or_none()
     return comment
@@ -114,12 +114,8 @@ async def update_comment(
     result = db.execute(db_request)
     comment = result.scalar_one_or_none()
     if comment:
-        comment.id = comment_id
         comment.comment = updated_comment.comment
-        comment.created_at = comment.created_at
         comment.updated_at = datetime.now()
-        comment.photo_id = comment.photo_id
-        comment.created_by = comment.created_by
         db.commit()
         db.refresh(comment)
     return comment

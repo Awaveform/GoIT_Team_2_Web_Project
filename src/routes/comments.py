@@ -180,7 +180,7 @@ async def update_comment(
             detail=f"The photo {photo_id} does not exist."
         )
 
-    check_comment = await repository_comments.get_comment(comment_id, db)
+    check_comment = await repository_comments.get_comment(comment_id, photo_id, db)
     
     if not check_comment:
         raise HTTPException(
@@ -234,10 +234,10 @@ async def delete_comment(
 
     if role.name == Roles.ADMIN.value or role.name == Roles.MODERATOR.value:
         
-        comment = await repository_comments.delete_comment(comment_id, photo_id, current_user, db)
+        await repository_comments.delete_comment(comment_id, photo_id, current_user, db)
         return None
     else:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, 
-            detail=f"Users are not allowed to delete comments",
+            detail=f"Only admins and moderators are allowed to delete comments",
         )
