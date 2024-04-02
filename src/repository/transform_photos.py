@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 import uuid
 
 from src.conf.config import settings
-from src.database.models import Photo
+from src.database.models import Photo, User
 from src.schemas import TransformPhotoModel, PhotoQrCodeModel
 from src.utils.data_convertor import get_enum_value
 from src.utils.qr_code import generate_qr_code
@@ -133,7 +133,7 @@ async def _save_transformed_photo_to_db(
 
 async def apply_transformation(
     photo: Photo,
-    updated_by: int,
+    updated_by: User,
     body: TransformPhotoModel,
     db: Session,
 ) -> Type[Photo]:
@@ -143,7 +143,7 @@ async def apply_transformation(
     :param photo: Original photo.
     :type photo: Photo.
     :param updated_by: User who updated a photo.
-    :type updated_by: int.
+    :type updated_by: User.
     :param body: Transformation parameters.
     :type body: TransformPhotoModel.
     :param db: DB instance.
@@ -158,9 +158,10 @@ async def apply_transformation(
         secure=True,
     )
     try:
+        public_id = f'PhotoShareApp/{updated_by.user_name}/{str(uuid.uuid4())}'
         transformed_img = uploader.upload(
             photo.url,
-            public_id=str(uuid.uuid1()),
+            public_id=public_id,
             overwrite=body.to_override,
             transformation=[
                 {
@@ -179,7 +180,7 @@ async def apply_transformation(
     return await _save_transformed_photo_to_db(
         db=db,
         transformed_photo_url=transformed_url,
-        updated_by=updated_by,
+        updated_by=updated_by.id,
         to_override_orig_photo=body.to_override,
         photo_description=body.description,
         orig_photo=photo,

@@ -5,7 +5,7 @@ import cloudinary.uploader
 import cloudinary.api
 
 from src.conf.config import settings
-from src.database.models import Photo, User, Role
+from src.database.models import Photo, User
 import uuid
 
 
