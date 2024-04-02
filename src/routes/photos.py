@@ -1,5 +1,7 @@
 from __future__ import annotations
-from fastapi import UploadFile, File, status, HTTPException
+
+
+from fastapi import UploadFile, File, status, HTTPException, Query
 
 
 from redis.asyncio import Redis
@@ -30,9 +32,8 @@ async def get_photos_by_user_id_or_all(
         db: Session = Depends(get_db),
         user_id: Optional[int] = None,
         photo_id: Optional[int] = None,
-        current_user: User = Depends(repository_users.get_current_user),
-        limit: int = 10,
-        skip: int = 0):
+        limit: int = Query(100, gt=0, le=1000),
+        skip: int = Query(0, gt=0, le=1000)):
 
     if user_id and photo_id:
         photos = await repository_photos.get_photo_by_photo_id_and_user_id(
@@ -58,16 +59,16 @@ async def get_photos_by_user_id_or_all(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Photo with photo_id -{photo_id} not found")
 
-    if user_id is None and photo_id is None:
-        photos = await repository_photos.get_photos_by_user_id(
+    if (user_id is None) and (photo_id is None):
+        photos = await repository_photos.get_all_photo(
             db=db,
-            user_id=current_user.id,
-            limit=limit,
-            skip=skip)
+            skip=skip,
+            limit=limit
+            )
         if photos is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Photos for {current_user.id} not found")
+                detail=f"Photos not found")
     return photos
 
 

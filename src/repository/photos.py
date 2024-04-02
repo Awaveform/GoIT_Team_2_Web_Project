@@ -43,6 +43,23 @@ async def get_photo_by_photo_id(photo_id: int, db: Session):
     return db.query(Photo).filter(Photo.id == photo_id).first()
 
 
+async def get_all_photo(db: Session, skip, limit):
+    """
+    The get_all_photo function returns a list of all photos in the database.
+
+    :param db: Pass the database session to the function
+    :type db: Session
+    :param skip: Skip the first n number of photos in the database
+    :type skip: int
+    :param limit: Limit the number of photos returned
+    :type limit: int
+    :return: A list of photo objects
+    :rtype: list[Photo]
+    """
+    photos = db.query(Photo).offset(skip).limit(limit).all()
+    return photos
+
+
 async def get_photo_by_photo_id_and_user_id(photo_id: int, user_id: int, db: Session):
     """
     Method that returns the uploaded photo by the photo identifier.
@@ -177,7 +194,3 @@ async def delete_photo(photo: Photo, db: Session):
     db.delete(photo)
     db.commit()
     return photo
-
-
-
-
