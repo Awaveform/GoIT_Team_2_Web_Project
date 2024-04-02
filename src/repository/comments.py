@@ -77,9 +77,15 @@ async def get_comments(
     :return: A sequence of photocomment objects
     :rtype: Sequence
     """
-    db_request = Select(PhotoComment).filter_by(photo_id=photo_id).order_by(asc(PhotoComment.id)).offset(offset).limit(limit)
-    contacts = db.execute(db_request)
-    return contacts.scalars().all()
+    comments = (
+        db.query(PhotoComment)
+        .filter(PhotoComment.photo_id == photo_id)
+        .order_by(PhotoComment.id)
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+    return comments
 
 async def update_comment(
         comment_id: int, 

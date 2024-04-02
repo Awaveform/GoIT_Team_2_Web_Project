@@ -12,18 +12,17 @@ from src.schemas import CommentSchema
 class TestCommentPhoto(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):
-
         self.db = MagicMock(spec=Session)
         self.user = User(id=1)
         self.existing_photo = Photo(id=1)
         self.not_existing_photo = Photo(id=999)
         self.comment = CommentSchema(comment='Test comment')
-        self.created_at=datetime.now()
+        self.created_at = datetime.now()
         self.limit = 10
         self.valid_offset = 0
         self.invalid_offset = -10
-        self.comments_list: list[PhotoComment] = [
-                        PhotoComment(
+        self.comments_list = [
+            PhotoComment(
                 id=1,
                 comment="Test comment 1",
                 created_at=self.created_at,
@@ -57,40 +56,40 @@ class TestCommentPhoto(unittest.IsolatedAsyncioTestCase):
 
     async def test_get_comments_valid_list(self):
         exp_comments = self.comments_list
-        self.db.execute.return_value.scalars.return_value.all.return_value = (
+        self.db.query().filter().order_by().offset().limit().all.return_value = (
             exp_comments
         )
 
         comments = await get_comments(
-            photo_id=self.existing_photo.id, 
-            limit=self.limit, 
-            offset=0, 
+            photo_id=self.existing_photo.id,
+            limit=self.limit,
+            offset=0,
             db=self.db,
-            )
+        )
         self.assertEqual(comments, exp_comments)
         self.assertEqual(comments[0].comment, "Test comment 1")
         self.assertEqual(comments[1].comment, "Test comment 2")
 
     async def test_get_comments_invalid_photo_id(self):
-        self.db.execute.return_value.scalars.return_value.all.return_value = []
+        self.db.query().filter().order_by().offset().limit().all.return_value = []
 
         comments = await get_comments(
-            photo_id=self.not_existing_photo.id, 
-            limit=self.limit, 
-            offset=self.valid_offset, 
+            photo_id=self.not_existing_photo.id,
+            limit=self.limit,
+            offset=self.valid_offset,
             db=self.db,
-            )
+        )
         self.assertEqual(comments, [])
 
     async def test_get_comments_invalid_offset(self):
-        self.db.execute.return_value.scalars.return_value.all.return_value = []
+        self.db.query().filter().order_by().offset().limit().all.return_value = []
 
         comments = await get_comments(
-            photo_id=self.existing_photo.id, 
-            limit=self.limit, 
-            offset=self.invalid_offset, 
+            photo_id=self.existing_photo.id,
+            limit=self.limit,
+            offset=self.invalid_offset,
             db=self.db,
-            )
+        )
         self.assertEqual(comments, [])
 
     async def test_update_comments_sucess(self):

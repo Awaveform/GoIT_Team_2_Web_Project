@@ -118,38 +118,35 @@ async def get_comments(
     :rtype:  Union[list[CommentResponse], dict]
     """
     comments = await repository_comments.get_comments(photo_id, limit, offset, db)
+    
     if comments:
-        result = []
-        for comment in comments:
-            result.append(
-                CommentResponse(
+        return {"comments": [CommentResponse(
                     id=comment.id,
                     comment=comment.comment,
                     created_at= comment.created_at,
                     updated_at= comment.updated_at,
                     photo_id= comment.photo_id,
                     created_by= comment.created_by,
-                    )
-                )   
-        return {"comments": result}       
-    else:
-        #checks offset parameter 
-        offset = 0
-        comments = await repository_comments.get_comments(photo_id, limit, offset, db)
-        if comments:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Number of comments for the photo {photo_id} is less than specified in offset parameter.",
+                    ) for comment in comments]}  
+
+    if not await repository_photos.get_photo_by_photo_id(photo_id=photo_id, db=db):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"The photo {photo_id} does not exist.",
         )
-        else: 
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"The photo {photo_id} does not exist.",
-            )
+
+    if offset > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Offset parameter is greater than the total number of comments for photo {photo_id}."
+        )
+    raise HTTPException(
+        status_code=status.HTTP_204_NO_CONTENT
+    )
         
     
 @router.patch('/{photo_id}/comments')
-async def update_contact(
+async def update_comment(
     comment_id: int, 
     photo_id: int,
     updated_comment:CommentSchema,                      
