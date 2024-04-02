@@ -1,4 +1,5 @@
 import unittest
+from typing import Type
 from unittest.mock import MagicMock, patch
 
 import cloudinary
@@ -147,9 +148,9 @@ class TestTransformPhotos(unittest.IsolatedAsyncioTestCase):
             effect=PhotoEffect.BLUR.value,
             gravity=PhotoGravity.FACES.value
         )
-        transformed_photo: Photo = await apply_transformation(
+        transformed_photo: Type[Photo] = await apply_transformation(
             photo=orig_photo,
-            updated_by=self.user.id,
+            updated_by=self.user,
             body=transform_body,
             db=self.session,
         )
@@ -181,9 +182,9 @@ class TestTransformPhotos(unittest.IsolatedAsyncioTestCase):
             gravity=PhotoGravity.AUTO.value,
             angle=20,
         )
-        transformed_photo: Photo = await apply_transformation(
+        transformed_photo: Type[Photo] = await apply_transformation(
             photo=orig_photo,
-            updated_by=self.user.id,
+            updated_by=self.user,
             body=transform_body,
             db=self.session,
         )
@@ -220,7 +221,7 @@ class TestTransformPhotos(unittest.IsolatedAsyncioTestCase):
         try:
             await apply_transformation(
                 photo=orig_photo,
-                updated_by=self.user.id,
+                updated_by=self.user,
                 body=transform_body,
                 db=self.session,
             )
