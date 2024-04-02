@@ -8,6 +8,7 @@ from src.database.models import Rate
 async def _filter_by(query: Query[Type[Rate]], **kw) -> Query[Type[Rate]]:
     """
     Filters a query for Rate objects based on provided criteria.
+    Filtering criteria can be provided either as single values or as lists of values.
 
     :param query: The query object to be filtered.
     :type query: Query[Type[Rate]]
@@ -18,16 +19,16 @@ async def _filter_by(query: Query[Type[Rate]], **kw) -> Query[Type[Rate]]:
     """
     filter_by_data = {
         "id": kw.get("id"),
-        "grade": kw.get("grade"),
-        "created_at": kw.get("created_at"),
-        "updated_at": kw.get("updated_at"),
         "photo_id": kw.get("photo_id"),
         "created_by": kw.get("created_by")
     }
 
     for key, value in filter_by_data.items():
         if value is not None:
-            query = query.filter(getattr(Rate, key) == value)
+            if type(value) is list:
+                query = query.filter(getattr(Rate, key).in_(value))
+            else:
+                query = query.filter(getattr(Rate, key) == value)
 
     return query
 
@@ -77,3 +78,16 @@ async def get_rates(db: Session, **kw) -> list[Type[Rate]]:
     query = db.query(Rate)
     rates = await _filter_by(query=query, **kw)
     return rates.all()
+
+
+async def delete_rates(rates_id: list[int], db: Session) -> None:
+    """
+    Deletes rates from the database by their IDs.
+
+    :param rates_id: List of rate IDs to be deleted.
+    :type rates_id: list[int]
+    :param db: The database session object.
+    :type db: Session
+    """
+    db.query(Rate).filter(Rate.id.in_(rates_id)).delete(synchronize_session=False)
+    db.commit()

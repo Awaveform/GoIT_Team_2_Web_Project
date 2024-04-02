@@ -224,3 +224,30 @@ async def get_current_user(
     user_name = authorize.get_jwt_subject()
 
     return await get_user_by_user_name(user_name, db, r)
+
+
+async def get_user_by_user_id(
+    user_id: int, db: Session, r: Redis
+) -> (Type[User] | bool):
+    """
+    Retrieves a user by user ID from the database or cache.
+
+    :param user_id: The user ID.
+    :type user_id: int
+    :param db: The database session object.
+    :type db: Session
+    :param r: The Redis client.
+    :type r: Redis
+    :return: A user object if the user_name exists in the database.
+    :rtype: Type[User] | bool
+    """
+    current_user = await r.get(f"user:{user_id}")
+    if current_user is None:
+        current_user = db.query(User).filter(User.id == user_id).first()
+        if current_user is None:
+            return False
+        await r.set(f"user:{user_id}", pickle.dumps(current_user))
+        await r.expire(f"user:{user_id}", 900)
+    else:
+        current_user = pickle.loads(current_user)
+    return current_user
