@@ -2,12 +2,11 @@ from __future__ import annotations
 
 
 from fastapi import UploadFile, File, status, HTTPException, Query
-
+from fastapi.openapi.models import Response
 
 from redis.asyncio import Redis
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Dict
 from sqlalchemy.orm import Session
-import redis
 from fastapi import APIRouter, Depends
 from fastapi.security import (
     HTTPBearer,
@@ -15,9 +14,6 @@ from fastapi.security import (
 
 from src.cache.async_redis import get_redis
 from src.database.models import User
-from src.conf.config import settings
-from src.database.models import User, Photo
-from src.database.models import User, Role
 from src.repository import users as repository_users
 from src.repository import photos as repository_photos
 from src.database.db import get_db
@@ -27,49 +23,40 @@ router = APIRouter(prefix="/photos", tags=["photos"])
 security = HTTPBearer()
 
 
-@router.get("/", response_model=Union[List[PhotoResponse], PhotoResponse])
+@router.get(
+    "/",
+    response_model=Dict[str, Union[List[PhotoResponse], PhotoResponse]]
+)
 async def get_photos(
         db: Session = Depends(get_db),
+        r: Redis = Depends(get_redis),
         user_id: Optional[int] = None,
         photo_id: Optional[int] = None,
-        limit: int = Query(100, gt=0, le=1000),
+        limit: int = Query(10, gt=0, le=1000),
         skip: int = Query(0, ge=0)):
 
-    if user_id and photo_id:
-        photos = await repository_photos.get_photo_by_photo_id_and_user_id(
-            user_id=user_id, photo_id=photo_id, db=db)
-        if photos is None:
+    if user_id is not None:
+        user_exists = await repository_users.get_user_by_user_id(
+            user_id, db, r
+        )
+        if not user_exists:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Photo with photo_id - {photo_id} for user- {user_id} not found")
-
-    if user_id and photo_id is None:
-        photos = await repository_photos.get_photos_by_user_id(
-            user_id=user_id, db=db, limit=limit, skip=skip)
-        if not photos:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Photos for {user_id} not found")
-
-    if user_id is None and photo_id:
-        photos = await repository_photos.get_photo_by_photo_id(
-            photo_id=photo_id, db=db)
-        if photos is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Photo with photo_id -{photo_id} not found")
-
-    if (user_id is None) and (photo_id is None):
-        photos = await repository_photos.get_all_photo(
-            db=db,
-            skip=skip,
-            limit=limit
+                detail=f"User with ID {user_id} was not found."
             )
-        if photos is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Photos not found")
-    return photos
+
+    photos = await repository_photos.find_photos(
+        db=db,
+        photo_id=photo_id,
+        user_id=user_id,
+        limit=limit,
+        skip=skip,
+    )
+
+    if not photos:
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+    return {"photos": photos}
 
 
 @router.post("/", response_model=PhotoResponse, status_code=status.HTTP_201_CREATED)
