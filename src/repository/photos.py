@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Type, Optional, Union, List
 from fastapi import HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 import cloudinary.uploader
@@ -194,3 +194,35 @@ async def delete_photo(photo: Photo, db: Session):
     db.delete(photo)
     db.commit()
     return photo
+
+
+async def find_photos(
+    db: Session,
+    photo_id: Optional[int] = None,
+    user_id: Optional[int] = None,
+    limit: int = 10,
+    skip: int = 0
+) -> list[Type[Photo]] | None:
+    """
+    Find photos based on optional filtering parameters.
+
+    :param db: Database session
+    :type db: Session
+    :param user_id: ID of the user who uploaded the photos (optional)
+    :type user_id: Optional[int]
+    :param photo_id: ID of the photo to retrieve (optional)
+    :type photo_id: Optional[int]
+    :param limit: Maximum number of photos to return (default is 100)
+    :type limit: int
+    :param skip: Number of photos to skip (default is 0)
+    :type skip: int
+    :return: List of photos matching the query parameters, or None if no photos
+    found
+    :rtype: Union[List[Photo], None]
+    """
+    query = db.query(Photo)
+    if photo_id is not None:
+        query = query.filter(Photo.id == photo_id)
+    if user_id is not None:
+        query = query.filter(Photo.created_by == user_id)
+    return query.offset(skip).limit(limit).all()
