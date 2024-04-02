@@ -200,7 +200,7 @@ async def find_photos(
     db: Session,
     photo_id: Optional[int] = None,
     user_id: Optional[int] = None,
-    limit: int = 100,
+    limit: int = 10,
     skip: int = 0
 ) -> list[Type[Photo]] | None:
     """
