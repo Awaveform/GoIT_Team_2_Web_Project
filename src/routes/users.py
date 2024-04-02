@@ -2,22 +2,21 @@ from __future__ import annotations
 
 from typing import Optional, Type
 
-import redis
 from fastapi import APIRouter, Depends
 from fastapi.security import (
     HTTPBearer,
 )
+from redis.asyncio import Redis
 from sqlalchemy.orm import Session
 
+from src.cache.async_redis import get_redis
 from src.database.models import Role
 from src.schemas import UserDetailedResponse
 from src.repository import users as repository_users
-from src.conf.config import settings
 from src.security.role_permissions import RoleChecker
 
 router = APIRouter(prefix="/users", tags=["users"])
 security = HTTPBearer()
-r = redis.Redis(host=settings.redis_host, port=settings.redis_port)
 
 
 @router.get(
@@ -26,10 +25,13 @@ r = redis.Redis(host=settings.redis_host, port=settings.redis_port)
 )
 async def get_user_info(
     user_name: str,
-    db: Session = Depends(RoleChecker(allowed_roles=["admin"]))
+    db: Session = Depends(RoleChecker(allowed_roles=["admin"])),
+    r: Redis = Depends(get_redis)
 ):
     """
     Method that returns the full user info for the specific user.
+    :param r: Redis instance.
+    :type r: redis.asyncio.Redis.
     :param user_name: User's name.
     :type user_name: str.
     :param db: DB session object.
@@ -38,9 +40,9 @@ async def get_user_info(
     :rtype: UserDetailedResponse.
     """
     user, uploaded_photos = await repository_users.get_full_user_info_by_name(
-        user_name=user_name, db=db
+        user_name=user_name, db=db, r=r
     )
-    role: Type[Role] = await repository_users.get_user_role(user_id=user.id, db=db)
+    role: Type[Role] = await repository_users.get_user_role(user_id=user.id, db=db, r=r)
     return UserDetailedResponse(
         id=user.id,
         is_active=user.is_active,

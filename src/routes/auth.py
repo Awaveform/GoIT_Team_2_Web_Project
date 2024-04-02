@@ -1,32 +1,27 @@
 from typing import Optional
 
-import redis
-from fastapi import Header, UploadFile, File
-from fastapi import APIRouter, HTTPException, Depends, status, BackgroundTasks, Request
+from fastapi import Header
+from fastapi import APIRouter, HTTPException, Depends, status
 from fastapi.security import (
     HTTPBearer,
 )
 from fastapi_jwt_auth import AuthJWT
-from fastapi_limiter.depends import RateLimiter
+from redis.asyncio import Redis
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
-import cloudinary
-import cloudinary.uploader
 
+from src.cache.async_redis import get_redis
 from src.database.db import get_db
 from src.database.models import User
-from src.repository.users import get_current_user, get_user_by_user_name
-from src.schemas import UserModel, UserResponse, TokenModelResponse, TokenModel, \
-    UserDetailedResponse
+from src.schemas import UserModel, UserResponse, TokenModelResponse, TokenModel
 from src.enums import Roles
 from src.repository import users as repository_users
 from src.services.auth import get_password_hash, verify_password
-from src.conf.config import settings
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 security = HTTPBearer()
-r = redis.Redis(host=settings.redis_host, port=settings.redis_port)
+
 
 @router.post(
     "/users",
@@ -34,8 +29,7 @@ r = redis.Redis(host=settings.redis_host, port=settings.redis_port)
     status_code=status.HTTP_201_CREATED,
 )
 async def signup(
-    body: UserModel,
-    db: Session = Depends(get_db),
+    body: UserModel, db: Session = Depends(get_db), r: Redis = Depends(get_redis)
 ):
     """
     The signup function creates a new user in the database.
@@ -45,6 +39,8 @@ async def signup(
     function and then adds that to body before creating a new user with repository_users'
     create_user function.
 
+    :param r: Redis instance.
+    :type r: redis.asyncio.Redis.
     :param body: Get the user's information from the request body
     :type body: UserModel
     :param db: Access the database
@@ -52,7 +48,7 @@ async def signup(
     :return: A dict with the user and a message
     :rtype: UserResponse.
     """
-    exist_user = await repository_users.get_user_by_user_name(body.user_name, db)
+    exist_user = await repository_users.get_user_by_user_name(body.user_name, db, r)
     if exist_user:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -60,7 +56,9 @@ async def signup(
         )
     body.password = get_password_hash(body.password)
     default_role: Roles = Roles.USER
-    new_user, new_user_role = await repository_users.create_user(body, default_role, db)
+    new_user, new_user_role = await repository_users.create_user(
+        body, default_role, db, r
+    )
     return UserResponse(
         id=new_user.id,
         is_active=new_user.is_active,
@@ -69,19 +67,23 @@ async def signup(
         user_name=new_user.user_name,
         created_at=new_user.created_at,
         updated_at=new_user.updated_at,
-        role=default_role.value
+        role=default_role.value,
     )
+
 
 @router.post(
     "/login",
     response_model=Optional[TokenModelResponse],
 )
 async def create_session(
-    user: TokenModel, authorize: AuthJWT = Depends(), db: Session = Depends(get_db)
+    user: TokenModel, authorize: AuthJWT = Depends(), db: Session = Depends(get_db),
+    r: Redis = Depends(get_redis)
 ):
     """
     The create_session function creates a new session for the user.
 
+    :param r: Redis instance.
+    :type r: redis.asyncio.Redis.
     :param user: Pass the user object to the function.
     :type user: TokenModel.
     :param authorize: Create the access token and refresh token.
@@ -91,7 +93,7 @@ async def create_session(
     :return: A dictionary with three keys: access_token, refresh_token and token_type
     :rtype: TokenModelResponse.
     """
-    _user = await repository_users.get_user_by_user_name(user.user_name, db)
+    _user = await repository_users.get_user_by_user_name(user.user_name, db, r)
     if _user:
         if not verify_password(user.password, _user.password):
             raise HTTPException(
@@ -110,6 +112,7 @@ async def create_session(
         }
 
     raise HTTPException(status_code=401, detail="Invalid user name")
+
 
 @router.get(
     "/refresh_token",
