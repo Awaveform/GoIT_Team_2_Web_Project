@@ -1,21 +1,23 @@
 from __future__ import annotations
 
-from typing import Optional, List
+from typing import Optional, List, Type
 
+from redis.asyncio import Redis
 from fastapi import APIRouter, Depends, Query, status, HTTPException
 from fastapi.security import (
     HTTPBearer,
 )
 from sqlalchemy.orm import Session
 
+from src.cache.async_redis import get_redis
 from src.database.db import get_db
 from src.database.models import User
+from src.schemas import RateModelResponse, RateModel, ListRatesModelResponse, DeleteRatesResponse
 from src.repository import (
+    users as repository_users,
     photos as repository_photos,
     rates as repository_rates
-)
-from src.repository.users import get_current_user
-from src.schemas import ListRatesModelResponse, RateModel, RateModelResponse
+) 
 from src.security.role_permissions import RoleChecker
 
 
@@ -41,18 +43,10 @@ async def get_rates_by_user(
     :return: Dictionary containing rates filtered by user identifiers.
     :rtype: dict
     """
-    rates = []
-
     if list_user_id:
-        
-        for user_id in list_user_id:
-            if user_id != 0:
-                rates.extend(await repository_rates.get_rates(db=db, created_by=user_id))
-        
-        return {"rates": rates}
-
-    rates = await repository_rates.get_rates(db=db)
-
+        rates = await repository_rates.get_rates(db=db, created_by=list_user_id)
+    else:
+        rates = await repository_rates.get_rates(db=db)
     return {"rates": rates}
 
 
@@ -64,7 +58,7 @@ async def get_rates_by_user(
 async def create_rates_for_photo(
     photo_id: int,
     grade: RateModel,
-    user: User = Depends(get_current_user),
+    user: User = Depends(repository_users.get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -118,3 +112,65 @@ async def create_rates_for_photo(
     )
 
     return rate
+
+
+@router.delete(
+    "/{user_id}",
+    response_model=Optional[DeleteRatesResponse]
+)
+async def delete_rates_of_photo(
+    user_id: int,
+    list_rate_id: Optional[list[int]] = Query(None),
+    db: Session = Depends(RoleChecker(allowed_roles=["admin", "moderator"])),
+    r: Redis = Depends(get_redis)
+):
+    """
+    Deletes rates associated with a user for a photo.
+
+    :param user_id: The identifier of the user whose rates are to be deleted.
+    :type user_id: int
+    :param list_rate_id: List of rate identifiers to be deleted.
+    :type list_rate_id: Optional[list[int]]
+    :param db: The database session object.
+    :type db: Session
+    :param r: The Redis client.
+    :type r: Redis
+    :return: A dictionary containing a message detailing the result of the operation.
+    :rtype: dict
+    """
+    user = await repository_users.get_user_by_user_id(
+        user_id=user_id,
+        db=db,
+        r=r
+    )
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User with id '{user_id}' does not exist."
+        )
+
+    deleted_rates = []
+    undeleted_rates = []
+    
+    if list_rate_id:
+        for rate_id in list_rate_id:
+            rates = await repository_rates.get_rates(db=db, id=rate_id, created_by=user_id)
+            if rates:
+                deleted_rates.append(rate_id)
+            else:
+                undeleted_rates.append(rate_id)
+
+        if undeleted_rates and deleted_rates:
+            detail = f"Rates of user with id '{user_id}': deleted ids {deleted_rates}, don't exist ids {undeleted_rates}."
+        elif not deleted_rates:
+            detail = f"Rates of user with id '{user_id}': don't exist ids {undeleted_rates}."
+        else:
+            detail = f"Rates of user with id '{user_id}': deleted ids {deleted_rates}."
+    else:
+        deleted_rates = [rate.id for rate in await repository_rates.get_rates(db=db, created_by=user_id)]
+        detail = f"All user's rates with id '{user_id}' have been successfully deleted."
+
+    if deleted_rates:
+        await repository_rates.delete_rates(rates_id=deleted_rates, db=db)
+    return {"detail": detail}
