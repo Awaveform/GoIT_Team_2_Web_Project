@@ -20,6 +20,7 @@ from src.repository.users import (
     get_full_user_info_by_name,
     assign_user_role,
     update_token,
+    get_user_by_user_id,
 )
 
 
@@ -126,3 +127,14 @@ class TestRolesAndUsers(unittest.IsolatedAsyncioTestCase):
         await update_token(
             user=self.user, token=str(random.randint(1, 10)), db=self.session
         )
+
+    async def test_get_user_by_user_id(self):
+        users_id = [1, 2, 3]
+        for user_id in users_id:
+            expected_user: User = User(id=user_id)
+            self.session.query().filter().first.return_value = expected_user
+            self.redis.get.return_value = await async_none()
+            user: Type[User] = await get_user_by_user_id(
+                user_id=user_id, db=self.session, r=self.redis
+            )
+            assert user.id == user_id

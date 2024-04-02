@@ -120,6 +120,10 @@ class ListRatesModelResponse(BaseModel):
     rates: list[RateModelResponse]
 
 
+class DeleteRatesResponse(BaseModel):
+    detail: str
+
+
 class CommentSchema(BaseModel):
     comment: str = Field(max_length=500)
 
