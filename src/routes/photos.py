@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from fastapi import UploadFile, File, status, HTTPException
-from typing import Optional
+
+from fastapi import UploadFile, File, status, HTTPException, Query
+from fastapi.openapi.models import Response
 
 from redis.asyncio import Redis
+from typing import Optional, List, Union, Dict
 from sqlalchemy.orm import Session
-import redis
 from fastapi import APIRouter, Depends
 from fastapi.security import (
     HTTPBearer,
@@ -20,6 +21,42 @@ from src.schemas import PhotoResponse
 
 router = APIRouter(prefix="/photos", tags=["photos"])
 security = HTTPBearer()
+
+
+@router.get(
+    "/",
+    response_model=Dict[str, Union[List[PhotoResponse], PhotoResponse]]
+)
+async def get_photos(
+        db: Session = Depends(get_db),
+        r: Redis = Depends(get_redis),
+        user_id: Optional[int] = None,
+        photo_id: Optional[int] = None,
+        limit: int = Query(10, gt=0, le=1000),
+        skip: int = Query(0, ge=0)):
+
+    if user_id is not None:
+        user_exists = await repository_users.get_user_by_user_id(
+            user_id, db, r
+        )
+        if not user_exists:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User with ID {user_id} was not found."
+            )
+
+    photos = await repository_photos.find_photos(
+        db=db,
+        photo_id=photo_id,
+        user_id=user_id,
+        limit=limit,
+        skip=skip,
+    )
+
+    if not photos:
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+    return {"photos": photos}
 
 
 @router.post("/", response_model=PhotoResponse, status_code=status.HTTP_201_CREATED)
@@ -61,7 +98,7 @@ async def delete_photo(photo_id: int,
             detail="Photo not found")
 
     if current_user_role.name == 'admin' or photo.created_by == current_user.id:
-        deleted_photo = await repository_photos.delete_photo_by_id(
+        deleted_photo = await repository_photos.delete_photo(
             photo=photo, db=db)
     else:
         raise HTTPException(
@@ -75,3 +112,7 @@ async def delete_photo(photo_id: int,
         created_by=deleted_photo.created_by,
         created_at=deleted_photo.created_at,
     )
+
+
+
+
