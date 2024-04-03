@@ -58,9 +58,6 @@ class TokenModelResponse(BaseModel):
 
 class PhotoBase(BaseModel):
     description: str | None = Field(max_length=500)
-
-
-class PhotoResponse(PhotoBase):
     id: int
     url: str
     created_by: int
@@ -68,6 +65,14 @@ class PhotoResponse(PhotoBase):
 
     class Config:
         orm_mode = True
+
+
+class PhotoResponse(PhotoBase):
+    pass
+
+
+class PhotoUpdate(PhotoBase):
+    updated_at: datetime
 
 
 class TransformPhotoModel(BaseModel):

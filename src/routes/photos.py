@@ -17,7 +17,7 @@ from src.database.models import User
 from src.repository import users as repository_users
 from src.repository import photos as repository_photos
 from src.database.db import get_db
-from src.schemas import PhotoResponse
+from src.schemas import PhotoResponse, PhotoUpdate
 
 router = APIRouter(prefix="/photos", tags=["photos"])
 security = HTTPBearer()
@@ -113,6 +113,36 @@ async def delete_photo(photo_id: int,
         created_at=deleted_photo.created_at,
     )
 
+
+@router.put("/photos/{photo_id}/description", response_model=PhotoUpdate)
+async def update_photo_description(
+        photo_id: int,
+        new_description: Optional[str] = None,
+        current_user: User = Depends(repository_users.get_current_user),
+        db: Session = Depends(get_db),
+        r: Redis = Depends(get_redis)):
+
+    current_user_role = await repository_users.get_user_role(
+        user_id=current_user.id, db=db, r=r)
+
+    photo = await repository_photos.get_photo_by_photo_id(photo_id, db)
+    if not photo:
+        raise HTTPException(status_code=404, detail="Photo not found")
+
+    if current_user_role.name == 'admin' or photo.created_by == current_user.id or current_user_role.name == 'moderator':
+        updated_photo = await repository_photos.update_photo_description(photo, new_description, db)
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden, only the owner, admin or moderator can updating photo description")
+    return PhotoUpdate(
+        id=updated_photo.id,
+        description=updated_photo.description,
+        created_by=updated_photo.created_by,
+        created_at=updated_photo.created_at,
+        updated_at=updated_photo.updated_at,
+        url=updated_photo.url
+    )
 
 
 
