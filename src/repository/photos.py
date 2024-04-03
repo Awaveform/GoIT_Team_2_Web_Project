@@ -261,7 +261,7 @@ async def add_tags_to_photo(tag: Tag, photo, db: Session) -> Photo:
     :type db: Session
     :return: A photo object
     """
-    photo.tags.add(tag)
+    photo.tags.append(tag)
     db.commit()
     return photo
 

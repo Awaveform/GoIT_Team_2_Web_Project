@@ -17,6 +17,7 @@ from src.database.models import User
 from src.repository import users as repository_users
 from src.repository import photos as repository_photos
 from src.database.db import get_db
+from src.repository.users import get_current_user
 from src.schemas import PhotoResponse, PhotoResponseWithTags
 from src.schemas import PhotoResponse, PhotoUpdate
 from src.schemas import PhotoResponse, PhotoUpdate
@@ -120,33 +121,46 @@ async def delete_photo(photo_id: int,
 async def add_tags(
         photo_id: int,
         tag_names: Optional[list[str]] = Query(None),
-        current_user: User = Depends(repository_users.get_current_user),
+        current_user: User = Depends(get_current_user),
         db: Session = Depends(get_db)):
+    if not tag_names:
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-    # Перевірка, що фотографія існує
     photo = await repository_photos.get_photo_by_photo_id(
         photo_id=photo_id,
         db=db
     )
     if not photo:
-        raise HTTPException(status_code=404, detail=f"Photo with photo_id- {photo_id} not found")
+        raise HTTPException(
+            status_code=404,
+            detail=f"Photo with photo_id- {photo_id} not found."
+        )
 
     if current_user.id != photo.created_by:
-        raise HTTPException(status_code=403, detail="Forbidden, only the owner can add tags to the photo")
+        raise HTTPException(
+            status_code=403,
+            detail="Forbidden, only the owner can add tags to the photo."
+        )
 
-    # Отримання списку тегів на фотографії
-    existing_tags = await repository_photos.get_tags_by_photo_id(photo.id, db)
-    existing_tag_names = [tag.name for tag in existing_tags]
+    existing_photo_tags = await repository_photos.get_tags_by_photo_id(
+        photo.id, db,
+    )
+    photo_tag_names = [tag.name for tag in existing_photo_tags]
 
-    # Перевірка, що кількість тегів не перевищує 5
-    if len(existing_tags) + len(tag_names) > 5:
-        raise HTTPException(status_code=400, detail="The number of tags cannot exceed 5")
+    if len(existing_photo_tags) + len(tag_names) > 5:
+        raise HTTPException(
+            status_code=400, detail="The number of tags cannot exceed 5",
+        )
 
     for tag_name in tag_names:
-        if tag_name not in existing_tag_names:
-            tag = await repository_photos.add_tag_by_name(tag_name=tag_name, current_user=current_user, db=db)
-            photo_with_tags = await repository_photos.add_tags_to_photo(photo=photo, tag=tag, db=db)
-    return photo_with_tags
+        if tag_name not in photo_tag_names:
+            tag = await repository_photos.add_tag_by_name(
+                tag_name=tag_name, current_user=current_user, db=db
+            )
+            photo = await repository_photos.add_tags_to_photo(
+                photo=photo, tag=tag, db=db
+            )
+    return photo
 
 @router.put("/photos/{photo_id}/description", response_model=PhotoUpdate)
 async def update_photo_description(
