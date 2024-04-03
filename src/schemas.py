@@ -155,6 +155,20 @@ class RateModelResponse(RateModel):
         orm_mode = True
 
 
+class CommentSchema(BaseModel):
+    comment: str = Field(max_length=500)
+
+
+class CommentResponse(CommentSchema):
+    id: int
+    created_at: datetime
+    updated_at: datetime | None
+    photo_id: int
+    created_by: int
+
+    class Config:
+        from_attributes = True
+
 class ListRatesModelResponse(BaseModel):
     rates: list[RateModelResponse]
 
