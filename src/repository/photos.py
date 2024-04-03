@@ -302,3 +302,25 @@ async def update_photo_description(
     db.commit()
     db.refresh(photo)
     return photo
+
+
+async def update_photo_description(
+        photo: Photo,
+        new_description: str,
+        db: Session
+) -> Photo:
+    """
+    The update_photo_description function updates the description of a photo in the database.
+
+    :param photo: Identify which photo to update
+    :type photo: Photo
+    :param new_description: Update the photo's description
+    :type new_description: str
+    :param db: Session: Pass the database session to the function
+    :type db: Session
+    :return: The updated photo object
+    """
+    photo.description = new_description
+    db.commit()
+    db.refresh(photo)
+    return photo
