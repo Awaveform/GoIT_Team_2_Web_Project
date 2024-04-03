@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import Union, Type, Any
 from fastapi import Query, status
+from fastapi.openapi.models import Response
 from sqlalchemy.orm import Session
 from redis.asyncio import Redis
 from fastapi import APIRouter, Depends, HTTPException
@@ -10,32 +11,30 @@ from src.cache.async_redis import get_redis
 from src.conf.config import settings
 from src.database.models import User, Role
 from src.repository import (
-    comments as repository_comments, 
+    comments as repository_comments,
     photos as repository_photos,
     users as repository_users
     )
 from src.database.db import get_db
+from src.repository.users import get_current_user
 from src.schemas import CommentResponse, CommentSchema
 from src.enums import Roles
+from src.security.role_permissions import RoleChecker
 
 router = APIRouter(prefix="/photos", tags=["comments"])
 security = HTTPBearer()
-r = Redis(
-    host=settings.redis_host, 
-    port=settings.redis_port,
-    )
 
 
-@router.post("/{photo_id}/comments", 
-             response_model=CommentResponse, 
+@router.post("/{photo_id}/comments",
+             response_model=CommentResponse,
              status_code=status.HTTP_201_CREATED)
 async def create_comment(
     photo_id: int,
-    comment: CommentSchema, 
+    comment: CommentSchema,
     current_user: User = Depends(repository_users.get_current_user),
     db: Session = Depends(get_db),
 ):
-    
+
     """
     The create_comment function creates a new comment for the photo with the given id.
         The function requires that you are logged in and that you provide a valid comment.
@@ -68,14 +67,14 @@ async def create_comment(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Comment should not be empty.",
         )
-    
+
     new_comment = await repository_comments.create_comment(
         comment=comment,
         photo_id=photo_id,
         current_user=current_user,
         db=db,
     )
-    
+
     return CommentResponse(
         id=new_comment.id,
         comment=new_comment.comment,
@@ -87,12 +86,12 @@ async def create_comment(
 
 @router.get('/{photo_id}/comments', response_model=Union[list[CommentResponse], dict])
 async def get_comments(
-    photo_id: int, 
-    limit: int = Query(10, ge=10, le=500), 
-    offset: int = Query(0, ge=0), 
+    photo_id: int,
+    limit: int = Query(10, ge=1, le=50),
+    offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
-    ) -> Union[list[CommentResponse], dict]:
-    
+) -> Union[list[CommentResponse], dict]:
+
     """
     The get_comments function returns a list of comments for the specified photo.
         The function takes in three parameters: 
@@ -118,7 +117,7 @@ async def get_comments(
     :rtype:  Union[list[CommentResponse], dict]
     """
     comments = await repository_comments.get_comments(photo_id, limit, offset, db)
-    
+
     if comments:
         return {"comments": [CommentResponse(
                     id=comment.id,
@@ -127,7 +126,7 @@ async def get_comments(
                     updated_at= comment.updated_at,
                     photo_id= comment.photo_id,
                     created_by= comment.created_by,
-                    ) for comment in comments]}  
+                    ) for comment in comments]}
 
     if not await repository_photos.get_photo_by_photo_id(photo_id=photo_id, db=db):
         raise HTTPException(
@@ -143,14 +142,14 @@ async def get_comments(
     raise HTTPException(
         status_code=status.HTTP_204_NO_CONTENT
     )
-        
-    
+
+
 @router.patch('/{photo_id}/comments')
 async def update_comment(
-    comment_id: int, 
+    comment_id: int,
     photo_id: int,
-    updated_comment:CommentSchema,                      
-    current_user: User = Depends(repository_users.get_current_user),
+    updated_comment:CommentSchema,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)):
 
     """
@@ -169,52 +168,52 @@ async def update_comment(
     :return: A commentschema object or None
     :rtype: CommentSchema | None
     """
-    check_photo = await repository_photos.get_photo_by_photo_id(
+    photo = await repository_photos.get_photo_by_photo_id(
         photo_id=photo_id,
         db=db,
     )
 
-    if not check_photo:
+    if not photo:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"The photo {photo_id} does not exist."
         )
 
-    check_comment = await repository_comments.get_comment(comment_id, photo_id, db)
-    
-    if not check_comment:
+    comment = await repository_comments.get_comment(comment_id, photo_id, db)
+
+    if not comment:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, 
+            status_code=status.HTTP_404_NOT_FOUND,
             detail=f"No such comment to photo {photo_id}",
         )
-    
-    if check_comment.created_by != current_user.id:
+
+    if comment.created_by != current_user.id:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, 
-            detail="Changing the comments by other users is forbidden",
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Comment's edition available for owner of the photo only.",
         )
-    
+
     if not updated_comment.comment.strip():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Comment should not be empty.",
         )
 
-    comment = await repository_comments.update_comment(comment_id, 
-                                                       photo_id,
-                                                       updated_comment, 
-                                                       current_user,
-                                                       db
-                                                       )
+    comment = await repository_comments.update_comment(
+        comment_id,
+        photo_id,
+        updated_comment,
+        current_user,
+        db,
+    )
     return comment
 
 @router.delete('/{photo_id}/comments', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_comment(
-    comment_id: int, 
-    photo_id: int,                  
-    current_user: User = Depends(repository_users.get_current_user),
-    db: Session = Depends(get_db),
-    r: Redis = Depends(get_redis)):
+    comment_id: int,
+    photo_id: int,
+    db: Session = Depends(RoleChecker(allowed_roles=["admin", "moderator"])),
+):
 
     """
     The delete_comment function deletes a comment from the database.
@@ -230,14 +229,6 @@ async def delete_comment(
     :param r: Redis: Get the redis connection
     :return: None
     """
-    role: Type[Role] = await repository_users.get_user_role(user_id=current_user.id, db=db, r=r)
-
-    if role.name == Roles.ADMIN.value or role.name == Roles.MODERATOR.value:
-        
-        await repository_comments.delete_comment(comment_id, photo_id, current_user, db)
-        return None
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, 
-            detail=f"Only admins and moderators are allowed to delete comments",
-        )
+    await repository_comments.delete_comment(
+        comment_id, photo_id, db
+    )

@@ -121,9 +121,8 @@ async def update_comment(
     return comment
 
 async def delete_comment(
-        comment_id:int, 
-        photo_id: int, 
-        current_user: User,
+        comment_id:int,
+        photo_id: int,
         db: Session,
         ):
     """
@@ -141,7 +140,9 @@ async def delete_comment(
     :rtype: PhotoComment | None
     
     """
-    db_request = Select(PhotoComment).filter_by(id=comment_id, photo_id=photo_id)
+    db_request = Select(PhotoComment).filter_by(
+        id=comment_id, photo_id=photo_id
+    )
     comment = db.execute(db_request)
     comment = comment.scalar_one_or_none()
     if comment:
