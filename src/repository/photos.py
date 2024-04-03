@@ -5,7 +5,7 @@ import cloudinary.uploader
 import cloudinary.api
 
 from src.conf.config import settings
-from src.database.models import Photo, User
+from src.database.models import Photo, User, Tag
 
 import uuid
 from src.database.models import Photo
@@ -226,6 +226,82 @@ async def find_photos(
     if user_id is not None:
         query = query.filter(Photo.created_by == user_id)
     return query.offset(skip).limit(limit).all()
+
+
+async def add_tag_by_name(tag_name: str, current_user: User, db: Session) -> Tag:
+    """
+    The add_tag_by_name function adds a tag to the database.
+
+    :param tag_name: Pass the name of the tag to be added
+    :type tag_name: str
+    :param current_user: Get the user id of the current user
+    :type current_user: User
+    :param db: Session: Access the database
+    :type db: Session
+    :return: A tag object
+    """
+    tag = db.query(Tag).filter(Tag.name == tag_name).first()
+    if not tag:
+        tag = Tag(name=tag_name, created_by=current_user.id)
+        db.add(tag)
+        db.commit()
+        db.refresh(tag)
+    return tag
+
+
+async def add_tags_to_photo(tag: Tag, photo, db: Session) -> Photo:
+    """
+    The add_tags_to_photo function adds a tag to a photo.
+
+    :param tag: Pass in the tag object that we want to add to our photo
+    :type tag: Tag
+    :param photo: Identify the photo to add a tag to
+    :type photo: Photo
+    :param db: Session: Pass in the database session
+    :type db: Session
+    :return: A photo object
+    """
+    photo.tags.append(tag)
+    db.commit()
+    return photo
+
+
+async def get_tags_by_photo_id(photo_id: int, db: Session) -> List[Tag]:
+
+    """
+    The get_tags_by_photo_id function returns a list of tags associated with the photo_id provided.
+
+    :param photo_id: Specify the photo_id of the photo we want to get tags for
+    :type photo_id: int
+    :param db: Pass the database session to the function
+    :type db: Session
+    :return: A list of tags that are associated with a given photo
+    :rtype: List[Tag]
+    """
+    tags = db.query(Tag).filter(Tag.photos.any(id=photo_id)).all()
+    return tags
+
+
+async def update_photo_description(
+        photo: Photo,
+        new_description: str,
+        db: Session
+) -> Photo:
+    """
+    The update_photo_description function updates the description of a photo in the database.
+
+    :param photo: Identify which photo to update
+    :type photo: Photo
+    :param new_description: Update the photo's description
+    :type new_description: str
+    :param db: Session: Pass the database session to the function
+    :type db: Session
+    :return: The updated photo object
+    """
+    photo.description = new_description
+    db.commit()
+    db.refresh(photo)
+    return photo
 
 
 async def update_photo_description(

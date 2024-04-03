@@ -17,6 +17,9 @@ from src.database.models import User
 from src.repository import users as repository_users
 from src.repository import photos as repository_photos
 from src.database.db import get_db
+from src.repository.users import get_current_user
+from src.schemas import PhotoResponse, PhotoResponseWithTags
+from src.schemas import PhotoResponse, PhotoUpdate
 from src.schemas import PhotoResponse, PhotoUpdate
 
 router = APIRouter(prefix="/photos", tags=["photos"])
@@ -113,6 +116,93 @@ async def delete_photo(photo_id: int,
         created_at=deleted_photo.created_at,
     )
 
+
+@router.post("/photos/{photo_id}/tags", response_model=PhotoResponseWithTags)
+async def add_tags(
+        photo_id: int,
+        tag_names: Optional[list[str]] = Query(None),
+        current_user: User = Depends(get_current_user),
+        db: Session = Depends(get_db)):
+    if not tag_names:
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+    photo = await repository_photos.get_photo_by_photo_id(
+        photo_id=photo_id,
+        db=db
+    )
+    if not photo:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Photo with photo_id- {photo_id} not found."
+        )
+
+    if current_user.id != photo.created_by:
+        raise HTTPException(
+            status_code=403,
+            detail="Forbidden, only the owner can add tags to the photo."
+        )
+
+    existing_photo_tags = await repository_photos.get_tags_by_photo_id(
+        photo.id, db,
+    )
+    photo_tag_names = [tag.name for tag in existing_photo_tags]
+
+    if len(existing_photo_tags) + len(tag_names) > 5:
+        raise HTTPException(
+            status_code=400, detail="The number of tags cannot exceed 5",
+        )
+
+    for tag_name in tag_names:
+        if tag_name not in photo_tag_names:
+            tag = await repository_photos.add_tag_by_name(
+                tag_name=tag_name, current_user=current_user, db=db
+            )
+            photo = await repository_photos.add_tags_to_photo(
+                photo=photo, tag=tag, db=db
+            )
+    return photo
+
+@router.put("/photos/{photo_id}/description", response_model=PhotoUpdate)
+async def update_photo_description(
+        photo_id: int,
+        new_description: Optional[str] = "",
+        current_user: User = Depends(repository_users.get_current_user),
+        db: Session = Depends(get_db),
+        r: Redis = Depends(get_redis),
+):
+    if not new_description.strip():
+        raise HTTPException(
+            status_code=400, detail="Bad request. Description can not be empty."
+        )
+
+    current_user_role = await repository_users.get_user_role(
+        user_id=current_user.id, db=db, r=r)
+
+    photo = await repository_photos.get_photo_by_photo_id(photo_id, db)
+    if not photo:
+        raise HTTPException(status_code=404, detail="Photo not found")
+
+    if (
+            photo.created_by == current_user.id or
+            current_user_role.name in {'admin', 'moderator'}
+    ):
+        updated_photo = await repository_photos.update_photo_description(
+            photo, new_description, db
+        )
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden, only the owner, admin or moderator can "
+                   "updating photo description."
+        )
+    return PhotoUpdate(
+        id=updated_photo.id,
+        description=updated_photo.description,
+        created_by=updated_photo.created_by,
+        created_at=updated_photo.created_at,
+        updated_at=updated_photo.updated_at,
+        url=updated_photo.url
+    )
 
 @router.put("/photos/{photo_id}/description", response_model=PhotoUpdate)
 async def update_photo_description(

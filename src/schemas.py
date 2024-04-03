@@ -75,6 +75,37 @@ class PhotoUpdate(PhotoBase):
     updated_at: datetime
 
 
+class TagModel(BaseModel):
+    name: str
+    id: int
+
+
+class TagResponse(TagModel):
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
+class PhotoResponseWithTags(PhotoBase):
+    id: int
+    url: str
+    created_by: int
+    created_at: datetime
+    tags: list[TagResponse]
+
+    class Config:
+        orm_mode = True
+
+
+class PhotoResponse(PhotoBase):
+    pass
+
+
+class PhotoUpdate(PhotoBase):
+    updated_at: datetime
+
+
 class TransformPhotoModel(BaseModel):
     to_override: bool = False
     description: str | None = Field(min_length=5, title="Photo description")
