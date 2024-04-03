@@ -58,13 +58,52 @@ class TokenModelResponse(BaseModel):
 
 class PhotoBase(BaseModel):
     description: str | None = Field(max_length=500)
-
-
-class PhotoResponse(PhotoBase):
     id: int
     url: str
     created_by: int
     created_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
+class PhotoResponse(PhotoBase):
+    pass
+
+
+class PhotoUpdate(PhotoBase):
+    updated_at: datetime
+
+
+class TagModel(BaseModel):
+    name: str
+    id: int
+
+
+class TagResponse(TagModel):
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
+class PhotoResponseWithTags(PhotoBase):
+    id: int
+    url: str
+    created_by: int
+    created_at: datetime
+    tags: list[TagResponse]
+
+    class Config:
+        orm_mode = True
+
+
+class PhotoResponse(PhotoBase):
+    pass
+
+
+class PhotoUpdate(PhotoBase):
+    updated_at: datetime
 
 
 class TransformPhotoModel(BaseModel):
