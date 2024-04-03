@@ -98,6 +98,14 @@ class PhotoResponseWithTags(PhotoBase):
         orm_mode = True
 
 
+class PhotoResponse(PhotoBase):
+    pass
+
+
+class PhotoUpdate(PhotoBase):
+    updated_at: datetime
+
+
 class TransformPhotoModel(BaseModel):
     to_override: bool = False
     description: str | None = Field(min_length=5, title="Photo description")
