@@ -1,4 +1,4 @@
-from typing import Type, Optional, Union, List
+from typing import Type
 from fastapi import HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 import cloudinary.uploader
@@ -6,19 +6,13 @@ import cloudinary.api
 
 from src.conf.config import settings
 from src.database.models import Photo, User
-
 import uuid
-from src.database.models import Photo
 
 
-async def get_photos_by_user_id(skip, limit, user_id: int, db: Session) -> list[Type[Photo]]:
+async def get_photos_by_user_id(user_id: int, db: Session) -> list[Type[Photo]]:
     """
     Method that returns the list of uploaded photos by the specific user.
 
-    :param skip: Number of photos to skip.
-    :type skip: int.
-    :param limit: Number of photos to return.
-    :type limit: int.
     :param user_id: User identifier.
     :type user_id: int.
     :param db: db session object.
@@ -26,54 +20,25 @@ async def get_photos_by_user_id(skip, limit, user_id: int, db: Session) -> list[
     :return: The list of photos.
     :rtype: list[Type[Photo]]
     """
-    return db.query(Photo).filter(Photo.created_by == user_id).offset(skip).limit(limit).all()
-
-
-async def get_photo_by_photo_id(photo_id: int, db: Session):
-    """
-    Method that returns the uploaded photo by the photo identifier.
-
-    :param photo_id: Photo identifier.
-    :type photo_id: int.
-    :param db: db session object.
-    :rtype db: Session.
-    :return: Photo.
-    :rtype: Photo
-    """
-    return db.query(Photo).filter(Photo.id == photo_id).first()
-
-
-async def get_all_photo(db: Session, skip, limit):
-    """
-    The get_all_photo function returns a list of all photos in the database.
-
-    :param db: Pass the database session to the function
-    :type db: Session
-    :param skip: Skip the first n number of photos in the database
-    :type skip: int
-    :param limit: Limit the number of photos returned
-    :type limit: int
-    :return: A list of photo objects
-    :rtype: list[Photo]
-    """
-    photos = db.query(Photo).offset(skip).limit(limit).all()
+    photos = db.query(Photo).filter(Photo.created_by == user_id).all()
     return photos
 
 
-async def get_photo_by_photo_id_and_user_id(photo_id: int, user_id: int, db: Session):
+async def get_photo_by_photo_id(
+        photo_id: int, db: Session,
+) -> Type[Photo] | None:
     """
     Method that returns the uploaded photo by the photo identifier.
 
     :param photo_id: Photo identifier.
     :type photo_id: int.
-    :param user_id: User identifier.
-    :type user_id: int.
     :param db: db session object.
     :rtype db: Session.
     :return: Photo.
     :rtype: Photo
     """
-    return db.query(Photo).filter(Photo.id == photo_id, Photo.created_by == user_id).first()
+    photo = db.query(Photo).filter(Photo.id == photo_id).first()
+    return photo
 
 
 # TODO: AR refactor -move logic and exeption to routs
@@ -179,7 +144,7 @@ def _delete_photo_from_cloudinary(photo_url: str):
     print(image_delete_result)
 
 
-async def delete_photo(photo: Photo, db: Session):
+async def delete_photo_by_id(photo: Photo, db: Session):
     """
     The delete_photo_by_id function deletes a photo from the database and cloudinary.
 
@@ -196,33 +161,22 @@ async def delete_photo(photo: Photo, db: Session):
     return photo
 
 
-async def find_photos(
-    db: Session,
-    photo_id: Optional[int] = None,
-    user_id: Optional[int] = None,
-    limit: int = 10,
-    skip: int = 0
-) -> list[Type[Photo]] | None:
+async def update_photo_description(photo, new_description, db: Session):
     """
-    Find photos based on optional filtering parameters.
+    The update_photo_description function updates the description of a photo in the database.
 
-    :param db: Database session
+    :param photo: Identify which photo to update
+    :type photo: Photo
+    :param new_description: Update the photo's description
+    :type new_description: str
+    :param db: Session: Pass the database session to the function
     :type db: Session
-    :param user_id: ID of the user who uploaded the photos (optional)
-    :type user_id: Optional[int]
-    :param photo_id: ID of the photo to retrieve (optional)
-    :type photo_id: Optional[int]
-    :param limit: Maximum number of photos to return (default is 100)
-    :type limit: int
-    :param skip: Number of photos to skip (default is 0)
-    :type skip: int
-    :return: List of photos matching the query parameters, or None if no photos
-    found
-    :rtype: Union[List[Photo], None]
+    :return: The updated photo object
     """
-    query = db.query(Photo)
-    if photo_id is not None:
-        query = query.filter(Photo.id == photo_id)
-    if user_id is not None:
-        query = query.filter(Photo.created_by == user_id)
-    return query.offset(skip).limit(limit).all()
+    photo.description = new_description
+    db.commit()
+    db.refresh(photo)
+    return photo
+
+
+
