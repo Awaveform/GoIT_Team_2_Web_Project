@@ -201,7 +201,7 @@ async def find_photos(
     photo_id: Optional[int] = None,
     user_id: Optional[int] = None,
     limit: int = 10,
-    skip: int = 0
+    skip: int = 0,
 ) -> list[Type[Photo]] | None:
     """
     Find photos based on optional filtering parameters.
@@ -226,3 +226,25 @@ async def find_photos(
     if user_id is not None:
         query = query.filter(Photo.created_by == user_id)
     return query.offset(skip).limit(limit).all()
+
+
+async def update_photo_description(
+        photo: Photo,
+        new_description: str,
+        db: Session
+) -> Photo:
+    """
+    The update_photo_description function updates the description of a photo in the database.
+
+    :param photo: Identify which photo to update
+    :type photo: Photo
+    :param new_description: Update the photo's description
+    :type new_description: str
+    :param db: Session: Pass the database session to the function
+    :type db: Session
+    :return: The updated photo object
+    """
+    photo.description = new_description
+    db.commit()
+    db.refresh(photo)
+    return photo

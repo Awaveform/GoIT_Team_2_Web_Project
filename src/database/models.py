@@ -82,8 +82,8 @@ class Photo(Base):
         default=None
     )
     is_transformed: Mapped[bool] = mapped_column(Boolean, nullable=True, default=False)
-
-    tags: Mapped[Set["Tag"]] = relationship(secondary=photos_tags) # need to check the
+    tags = relationship("Tag", secondary="photos_tags", back_populates="photos")
+    # tags: Mapped[Set["Tag"]] = relationship(secondary=photos_tags) # need to check the
     # correctness of this relationship
 
 
@@ -99,7 +99,8 @@ class Tag(Base):
     created_by: Mapped[int] = mapped_column(
         Integer, ForeignKey("users.id", ondelete="CASCADE")
     )
-    photos: Mapped[Set["Photo"]] = relationship(secondary=photos_tags) # need to check the
+    photos = relationship("Photo", secondary="photos_tags", back_populates="tags")
+    # photos: Mapped[Set["Photo"]] = relationship(secondary=photos_tags) # need to check the
     # correctness of this relationship
 
 
