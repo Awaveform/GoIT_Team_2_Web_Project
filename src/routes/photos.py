@@ -117,10 +117,15 @@ async def delete_photo(photo_id: int,
 @router.put("/photos/{photo_id}/description", response_model=PhotoUpdate)
 async def update_photo_description(
         photo_id: int,
-        new_description: Optional[str] = None,
+        new_description: Optional[str] = "",
         current_user: User = Depends(repository_users.get_current_user),
         db: Session = Depends(get_db),
-        r: Redis = Depends(get_redis)):
+        r: Redis = Depends(get_redis),
+):
+    if not new_description.strip():
+        raise HTTPException(
+            status_code=400, detail="Bad request. Description can not be empty."
+        )
 
     current_user_role = await repository_users.get_user_role(
         user_id=current_user.id, db=db, r=r)
@@ -129,12 +134,19 @@ async def update_photo_description(
     if not photo:
         raise HTTPException(status_code=404, detail="Photo not found")
 
-    if current_user_role.name == 'admin' or photo.created_by == current_user.id or current_user_role.name == 'moderator':
-        updated_photo = await repository_photos.update_photo_description(photo, new_description, db)
+    if (
+            photo.created_by == current_user.id or
+            current_user_role.name in {'admin', 'moderator'}
+    ):
+        updated_photo = await repository_photos.update_photo_description(
+            photo, new_description, db
+        )
     else:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Forbidden, only the owner, admin or moderator can updating photo description")
+            detail="Forbidden, only the owner, admin or moderator can "
+                   "updating photo description."
+        )
     return PhotoUpdate(
         id=updated_photo.id,
         description=updated_photo.description,

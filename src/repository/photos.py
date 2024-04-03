@@ -197,11 +197,11 @@ async def delete_photo(photo: Photo, db: Session):
 
 
 async def find_photos(
-        db: Session,
-        photo_id: Optional[int] = None,
-        user_id: Optional[int] = None,
-        limit: int = 10,
-        skip: int = 0
+    db: Session,
+    photo_id: Optional[int] = None,
+    user_id: Optional[int] = None,
+    limit: int = 10,
+    skip: int = 0,
 ) -> list[Type[Photo]] | None:
     """
     Find photos based on optional filtering parameters.
@@ -228,7 +228,11 @@ async def find_photos(
     return query.offset(skip).limit(limit).all()
 
 
-async def update_photo_description(photo, new_description, db: Session):
+async def update_photo_description(
+        photo: Photo,
+        new_description: str,
+        db: Session
+) -> Photo:
     """
     The update_photo_description function updates the description of a photo in the database.
 
