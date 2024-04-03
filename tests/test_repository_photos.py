@@ -1,12 +1,16 @@
 import unittest
-from unittest.mock import MagicMock, patch
+import pytest
+
+from unittest.mock import MagicMock, patch, AsyncMock
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from src.database.models import User, Photo
 from src.repository.photos import (
     get_photo_by_photo_id,
-    create_photo)
+    create_photo,
+    update_photo_description)
+
 
 
 class TestPhotos(unittest.IsolatedAsyncioTestCase):
@@ -15,6 +19,8 @@ class TestPhotos(unittest.IsolatedAsyncioTestCase):
         self.user = User(id=1)
         self.photo_url = "https://res.cloudinary.com/image/upload/6AQ8KKI6.jpg"
         self.photo_id = 1
+        self.photo = Photo(id=1, description="Old description", created_by=1)
+        self.new_description = "New description"
 
     async def test_get_photo_by_photo_id(self):
         expected_photo: Photo = Photo(created_by=self.user.id)
@@ -38,7 +44,6 @@ class TestPhotos(unittest.IsolatedAsyncioTestCase):
 
         with patch('src.repository.photos._upload_photo_to_cloudinary',
                    return_value='https://example.com/photo.jpg') as mock_upload_photo_to_cloudinary:
-
             photo = await create_photo(description='Test photo', current_user=current_user, db=self.session, file=file)
 
             assert photo.url == 'https://example.com/photo.jpg'
@@ -55,4 +60,12 @@ class TestPhotos(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(HTTPException):
                 await create_photo(description='Test photo', current_user=current_user, db=self.session, file=file)
 
+    async def test_update_photo_description(self):
+        new_description = "Updated description"
+        photo = Photo(id=1, description="Old description", created_by=1)
+        updated_photo = await update_photo_description(
+            photo=photo,
+            new_description=new_description,
+            db=self.session)
 
+        assert updated_photo.description == new_description

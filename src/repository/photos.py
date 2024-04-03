@@ -3,7 +3,7 @@ from fastapi import HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 import cloudinary.uploader
 import cloudinary.api
-
+from sqlalchemy.exc import DatabaseError
 from src.conf.config import settings
 from src.database.models import Photo, User
 import uuid
