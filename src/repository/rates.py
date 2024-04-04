@@ -2,7 +2,7 @@ from typing import Type
 
 from sqlalchemy.orm import Session, Query
 
-from src.database.models import Rate
+from src.database.models.rate import Rate
 
 
 async def _filter_by(query: Query[Type[Rate]], **kw) -> Query[Type[Rate]]:

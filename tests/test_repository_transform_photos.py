@@ -8,7 +8,8 @@ from fastapi import HTTPException, status
 from qrcode.image.styledpil import StyledPilImage
 from sqlalchemy.orm import Session
 
-from src.database.models import User, Photo
+from src.database.models.photo import Photo
+from src.database.models.user import User
 from src.enums import PhotoEffect, PhotoGravity, QrModuleDrawer, QrColorMask
 from src.repository.transform_photos import (
     apply_transformation,

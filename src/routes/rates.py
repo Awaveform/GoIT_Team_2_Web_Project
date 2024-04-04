@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, List, Type
+from typing import Optional
 
 from redis.asyncio import Redis
 from fastapi import APIRouter, Depends, Query, status, HTTPException
@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from src.cache.async_redis import get_redis
 from src.database.db import get_db
-from src.database.models import User
+from src.database.models.user import User
 from src.schemas import RateModelResponse, RateModel, ListRatesModelResponse, DeleteRatesResponse
 from src.repository import (
     users as repository_users,

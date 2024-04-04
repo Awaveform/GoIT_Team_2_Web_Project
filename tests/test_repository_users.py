@@ -8,7 +8,9 @@ import unittest
 
 from sqlalchemy.orm import Session
 
-from src.database.models import User, Role, UserRole
+from src.database.models.role import Role
+from src.database.models.user import User
+from src.database.models.user_role import UserRole
 from src.schemas import UserModel, UserRoleModel
 from src.enums import Roles
 from src.repository.users import (

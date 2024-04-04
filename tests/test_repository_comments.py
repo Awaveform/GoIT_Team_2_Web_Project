@@ -4,8 +4,11 @@ from datetime import datetime
 from unittest.mock import MagicMock
 from sqlalchemy.orm import Session
 
-from src.repository.comments import create_comment, get_comments, update_comment, delete_comment
-from src.database.models import PhotoComment, User, Photo
+from src.database.models.photo import Photo
+from src.database.models.user import User
+from src.repository.comments import create_comment, get_comments, update_comment, \
+    delete_comment
+from src.database.models.photo_comment import PhotoComment
 from src.schemas import CommentSchema
 
 
@@ -39,10 +42,8 @@ class TestCommentPhoto(unittest.IsolatedAsyncioTestCase):
                 created_by=self.user.id,
             ),
         ]
-        
-       
-    async def test_create_comment_success(self):
 
+    async def test_create_comment_success(self):
         result: PhotoComment = await create_comment(
             photo_id=self.existing_photo,
             comment=self.comment,
@@ -50,7 +51,7 @@ class TestCommentPhoto(unittest.IsolatedAsyncioTestCase):
             db=self.db
         )
         self.assertEqual(result.comment, 'Test comment')
-        
+
         self.assertEqual(result.created_by, self.user.id)
         self.db.add.assert_called_once_with(result)
 
@@ -99,10 +100,10 @@ class TestCommentPhoto(unittest.IsolatedAsyncioTestCase):
 
         updated_comment_data = CommentSchema(comment='Updated comment')
         updated_comment = await update_comment(
-            comment_id=existing_comment.id, 
-            photo_id=self.existing_photo.id, 
+            comment_id=existing_comment.id,
+            photo_id=self.existing_photo.id,
             updated_comment=updated_comment_data,
-            current_user=self.user, 
+            current_user=self.user,
             db=self.db)
 
         self.assertEqual(updated_comment.comment, 'Updated comment')
@@ -111,18 +112,17 @@ class TestCommentPhoto(unittest.IsolatedAsyncioTestCase):
 
     async def test_update_comment_not_found(self):
         not_existing_comment = self.comments_list[0]
-        
+
         self.db.execute.return_value.scalar_one_or_none.return_value = None
 
         updated_comment_data = CommentSchema(comment='Updated comment')
         updated_comment = await update_comment(
-            comment_id=not_existing_comment.id, 
-            photo_id=self.existing_photo.id, 
+            comment_id=not_existing_comment.id,
+            photo_id=self.existing_photo.id,
             updated_comment=updated_comment_data,
             current_user=self.user, db=self.db)
 
         self.assertIsNone(updated_comment)
-
 
     async def test_delete_comment_existing(self):
         existing_comment = self.comments_list[0]
@@ -130,9 +130,8 @@ class TestCommentPhoto(unittest.IsolatedAsyncioTestCase):
         self.db.execute.return_value.scalar_one_or_none.return_value = existing_comment
 
         deleted_comment = await delete_comment(
-            comment_id=existing_comment.id, 
-            photo_id=self.existing_photo.id, 
-            current_user=self.user, 
+            comment_id=existing_comment.id,
+            photo_id=self.existing_photo.id,
             db=self.db)
 
         self.assertEqual(deleted_comment, existing_comment)
@@ -141,13 +140,12 @@ class TestCommentPhoto(unittest.IsolatedAsyncioTestCase):
 
     async def test_delete_comment_not_existing(self):
         not_existing_comment = self.comments_list[0]
-        
+
         self.db.execute.return_value.scalar_one_or_none.return_value = None
 
         deleted_comment = await delete_comment(
-            comment_id=not_existing_comment.id, 
-            photo_id=self.existing_photo.id, 
-            current_user=self.user, 
+            comment_id=not_existing_comment.id,
+            photo_id=self.existing_photo.id,
             db=self.db)
 
         self.assertIsNone(deleted_comment)

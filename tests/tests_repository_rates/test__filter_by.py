@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 from sqlalchemy.orm import Query
 
 from src.repository.rates import _filter_by
-from src.database.models import Rate
+from src.database.models.rate import Rate
 
 
 class TestFilterBy(unittest.IsolatedAsyncioTestCase):

@@ -1,24 +1,19 @@
 from __future__ import annotations
-from typing import Union, Type, Any
+from typing import Union
 from fastapi import Query, status
-from fastapi.openapi.models import Response
 from sqlalchemy.orm import Session
-from redis.asyncio import Redis
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import (HTTPBearer)
 
-from src.cache.async_redis import get_redis
-from src.conf.config import settings
-from src.database.models import User, Role
+from src.database.models.user import User
 from src.repository import (
     comments as repository_comments,
     photos as repository_photos,
     users as repository_users
-    )
+)
 from src.database.db import get_db
 from src.repository.users import get_current_user
 from src.schemas import CommentResponse, CommentSchema
-from src.enums import Roles
 from src.security.role_permissions import RoleChecker
 
 router = APIRouter(prefix="/photos", tags=["comments"])
@@ -29,12 +24,11 @@ security = HTTPBearer()
              response_model=CommentResponse,
              status_code=status.HTTP_201_CREATED)
 async def create_comment(
-    photo_id: int,
-    comment: CommentSchema,
-    current_user: User = Depends(repository_users.get_current_user),
-    db: Session = Depends(get_db),
+        photo_id: int,
+        comment: CommentSchema,
+        current_user: User = Depends(repository_users.get_current_user),
+        db: Session = Depends(get_db),
 ):
-
     """
     The create_comment function creates a new comment for the photo with the given id.
         The function requires that you are logged in and that you provide a valid comment.
@@ -84,14 +78,14 @@ async def create_comment(
         created_by=new_comment.created_by,
     )
 
+
 @router.get('/{photo_id}/comments', response_model=Union[list[CommentResponse], dict])
 async def get_comments(
-    photo_id: int,
-    limit: int = Query(10, ge=1, le=50),
-    offset: int = Query(0, ge=0),
-    db: Session = Depends(get_db),
+        photo_id: int,
+        limit: int = Query(10, ge=1, le=50),
+        offset: int = Query(0, ge=0),
+        db: Session = Depends(get_db),
 ) -> Union[list[CommentResponse], dict]:
-
     """
     The get_comments function returns a list of comments for the specified photo.
         The function takes in three parameters: 
@@ -120,13 +114,13 @@ async def get_comments(
 
     if comments:
         return {"comments": [CommentResponse(
-                    id=comment.id,
-                    comment=comment.comment,
-                    created_at= comment.created_at,
-                    updated_at= comment.updated_at,
-                    photo_id= comment.photo_id,
-                    created_by= comment.created_by,
-                    ) for comment in comments]}
+            id=comment.id,
+            comment=comment.comment,
+            created_at=comment.created_at,
+            updated_at=comment.updated_at,
+            photo_id=comment.photo_id,
+            created_by=comment.created_by,
+        ) for comment in comments]}
 
     if not await repository_photos.get_photo_by_photo_id(photo_id=photo_id, db=db):
         raise HTTPException(
@@ -146,12 +140,11 @@ async def get_comments(
 
 @router.patch('/{photo_id}/comments')
 async def update_comment(
-    comment_id: int,
-    photo_id: int,
-    updated_comment:CommentSchema,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)):
-
+        comment_id: int,
+        photo_id: int,
+        updated_comment: CommentSchema,
+        current_user: User = Depends(get_current_user),
+        db: Session = Depends(get_db)):
     """
     The update_contact function updates a comment by its id.
     
@@ -208,13 +201,13 @@ async def update_comment(
     )
     return comment
 
+
 @router.delete('/{photo_id}/comments', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_comment(
-    comment_id: int,
-    photo_id: int,
-    db: Session = Depends(RoleChecker(allowed_roles=["admin", "moderator"])),
+        comment_id: int,
+        photo_id: int,
+        db: Session = Depends(RoleChecker(allowed_roles=["admin", "moderator"])),
 ):
-
     """
     The delete_comment function deletes a comment from the database.
     
@@ -222,11 +215,8 @@ async def delete_comment(
     :type comment_id: int
     :param photo_id: int: Get the photo_id of the comment that is being deleted
     :type photo_id: int
-    :param current_user: User: Get the current user's id
-    :type current_user: User
     :param db: Session: Pass a database session to the function
     :type db: Session
-    :param r: Redis: Get the redis connection
     :return: None
     """
     await repository_comments.delete_comment(

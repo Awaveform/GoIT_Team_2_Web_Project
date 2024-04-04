@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from src.cache.async_redis import get_redis
 from src.database.db import get_db
-from src.database.models import User
+from src.database.models.user import User
 from src.schemas import UserModel, UserResponse, TokenModelResponse, TokenModel
 from src.enums import Roles
 from src.repository import users as repository_users

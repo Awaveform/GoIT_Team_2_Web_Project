@@ -3,7 +3,8 @@ from unittest.mock import MagicMock, patch
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from src.database.models import User, Photo
+from src.database.models.photo import Photo
+from src.database.models.user import User
 from src.repository.photos import (
     get_photo_by_photo_id,
     create_photo)

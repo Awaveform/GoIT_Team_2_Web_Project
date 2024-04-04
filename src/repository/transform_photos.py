@@ -10,7 +10,8 @@ from sqlalchemy.orm import Session
 import uuid
 
 from src.conf.config import settings
-from src.database.models import Photo, User
+from src.database.models.photo import Photo
+from src.database.models.user import User
 from src.schemas import TransformPhotoModel, PhotoQrCodeModel
 from src.utils.data_convertor import get_enum_value
 from src.utils.qr_code import generate_qr_code

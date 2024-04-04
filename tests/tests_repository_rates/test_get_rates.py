@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 from sqlalchemy.orm import Session
 
 from src.repository.rates import get_rates
-from src.database.models import Rate
+from src.database.models.rate import Rate
 
 
 class TestGetRates(unittest.IsolatedAsyncioTestCase):

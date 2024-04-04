@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from src.cache.async_redis import get_redis
 from src.database.db import get_db
-from src.database.models import UserRole
+from src.database.models.user_role import UserRole
 from src.repository.users import get_current_user
 
 

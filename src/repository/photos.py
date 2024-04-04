@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Type, Optional, Union, List
 from fastapi import HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
@@ -5,10 +7,12 @@ import cloudinary.uploader
 import cloudinary.api
 
 from src.conf.config import settings
-from src.database.models import Photo, User, Tag
 
 import uuid
-from src.database.models import Photo
+
+from src.database.models.photo import Photo
+from src.database.models.tag import Tag
+from src.database.models.user import User
 
 
 async def get_photos_by_user_id(skip, limit, user_id: int, db: Session) -> list[Type[Photo]]:
@@ -116,7 +120,8 @@ def _upload_photo_to_cloudinary(current_user: User, file: UploadFile = File()) -
         raise HTTPException(status_code=400, detail=f"Error uploading photo: {str(e)}")
 
 
-async def create_photo(description: str, current_user: User, db: Session, file: UploadFile = File()) -> Photo:
+async def create_photo(description: str, current_user: User, db: Session,
+                       file: UploadFile = File()) -> Photo:
     """
     The create_photo function creates a new photo in the database.
 
@@ -144,7 +149,8 @@ def _get_public_id_from_url(photo_url: str) -> str:
     """
     The _get_public_id_from_url function takes a photo_url as an argument and returns the public_id of that image.
 
-    :param photo_url: photo_url is a string that represents the URL of a photo on the cloudinary server
+    :param photo_url: photo_url is a string that represents the URL of a photo on the
+    cloudinary server
     :type photo_url: str
     :return: The public id of the photo
     :rtype: str
@@ -159,7 +165,8 @@ def _get_public_id_from_url(photo_url: str) -> str:
 
 def _delete_photo_from_cloudinary(photo_url: str):
     """
-    The _delete_photo_from_cloudinary function takes in a photo_url parameter, which is the URL of the photo to be deleted.
+    The _delete_photo_from_cloudinary function takes in a photo_url parameter, which is
+    the URL of the photo to be deleted.
     It then uses Cloudinary's Python SDK to delete that image from Cloudinary
 
     :param photo_url: Pass the photo url to the function
@@ -175,7 +182,8 @@ def _delete_photo_from_cloudinary(photo_url: str):
         secure=True
     )
     public_ids = _get_public_id_from_url(photo_url)
-    image_delete_result = cloudinary.api.delete_resources(public_ids, resource_type="image", type="upload")
+    image_delete_result = cloudinary.api.delete_resources(
+        public_ids, resource_type="image", type="upload")
     print(image_delete_result)
 
 
@@ -269,7 +277,8 @@ async def add_tags_to_photo(tag: Tag, photo, db: Session) -> Photo:
 async def get_tags_by_photo_id(photo_id: int, db: Session) -> List[Tag]:
 
     """
-    The get_tags_by_photo_id function returns a list of tags associated with the photo_id provided.
+    The get_tags_by_photo_id function returns a list of tags associated with the
+    photo_id provided.
 
     :param photo_id: Specify the photo_id of the photo we want to get tags for
     :type photo_id: int
@@ -288,29 +297,8 @@ async def update_photo_description(
         db: Session
 ) -> Photo:
     """
-    The update_photo_description function updates the description of a photo in the database.
-
-    :param photo: Identify which photo to update
-    :type photo: Photo
-    :param new_description: Update the photo's description
-    :type new_description: str
-    :param db: Session: Pass the database session to the function
-    :type db: Session
-    :return: The updated photo object
-    """
-    photo.description = new_description
-    db.commit()
-    db.refresh(photo)
-    return photo
-
-
-async def update_photo_description(
-        photo: Photo,
-        new_description: str,
-        db: Session
-) -> Photo:
-    """
-    The update_photo_description function updates the description of a photo in the database.
+    The update_photo_description function updates the description of a photo in the
+    database.
 
     :param photo: Identify which photo to update
     :type photo: Photo

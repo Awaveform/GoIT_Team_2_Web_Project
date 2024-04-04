@@ -13,13 +13,12 @@ from fastapi.security import (
 )
 
 from src.cache.async_redis import get_redis
-from src.database.models import User
+from src.database.models.user import User
 from src.repository import users as repository_users
 from src.repository import photos as repository_photos
 from src.database.db import get_db
 from src.repository.users import get_current_user
-from src.schemas import PhotoResponse, PhotoResponseWithTags
-from src.schemas import PhotoResponse, PhotoUpdate
+from src.schemas import PhotoResponseWithTags
 from src.schemas import PhotoResponse, PhotoUpdate
 
 router = APIRouter(prefix="/photos", tags=["photos"])
@@ -245,6 +244,3 @@ async def update_photo_description(
         updated_at=updated_photo.updated_at,
         url=updated_photo.url
     )
-
-
-
