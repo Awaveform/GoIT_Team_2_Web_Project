@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     secret_key: str
     algorithm: str
 
+    rate_limit_requests_per_minute: int
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

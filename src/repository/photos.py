@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Type, Optional, Union, List
 from fastapi import HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
@@ -5,20 +7,18 @@ import cloudinary.uploader
 import cloudinary.api
 
 from src.conf.config import settings
-from src.database.models import Photo, User, Tag
 
 import uuid
-from src.database.models import Photo
+
+from src.database.models.photo import Photo
+from src.database.models.tag import Tag
+from src.database.models.user import User
 
 
-async def get_photos_by_user_id(skip, limit, user_id: int, db: Session) -> list[Type[Photo]]:
+async def get_photos_by_user_id(user_id: int, db: Session) -> list[Type[Photo]]:
     """
     Method that returns the list of uploaded photos by the specific user.
 
-    :param skip: Number of photos to skip.
-    :type skip: int.
-    :param limit: Number of photos to return.
-    :type limit: int.
     :param user_id: User identifier.
     :type user_id: int.
     :param db: db session object.
@@ -26,7 +26,7 @@ async def get_photos_by_user_id(skip, limit, user_id: int, db: Session) -> list[
     :return: The list of photos.
     :rtype: list[Type[Photo]]
     """
-    return db.query(Photo).filter(Photo.created_by == user_id).offset(skip).limit(limit).all()
+    return db.query(Photo).filter(Photo.created_by == user_id).all()
 
 
 async def get_photo_by_photo_id(photo_id: int, db: Session):
@@ -73,7 +73,11 @@ async def get_photo_by_photo_id_and_user_id(photo_id: int, user_id: int, db: Ses
     :return: Photo.
     :rtype: Photo
     """
-    return db.query(Photo).filter(Photo.id == photo_id, Photo.created_by == user_id).first()
+    return (
+        db.query(Photo)
+        .filter(Photo.id == photo_id, Photo.created_by == user_id)
+        .first()
+    )
 
 
 # TODO: AR refactor -move logic and exeption to routs
@@ -92,11 +96,14 @@ def _upload_photo_to_cloudinary(current_user: User, file: UploadFile = File()) -
     :return: The url of the photo uploaded to cloudinary
     :rtype: str
     """
-    allowed_formats = ['jpeg', 'jpg', 'png']
-    file_extension = file.filename.split('.')[-1].lower()
+    allowed_formats = ["jpeg", "jpg", "png"]
+    file_extension = file.filename.split(".")[-1].lower()
     if file_extension not in allowed_formats:
-        raise HTTPException(status_code=400, detail=f"Unsupported file format: {file_extension}. "
-                                                    f"Supported formats are: {', '.join(allowed_formats)}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file format: {file_extension}. "
+            f"Supported formats are: {', '.join(allowed_formats)}",
+        )
 
     unique_filename = str(uuid.uuid4())
 
@@ -104,19 +111,20 @@ def _upload_photo_to_cloudinary(current_user: User, file: UploadFile = File()) -
         cloud_name=settings.cloudinary_name,
         api_key=settings.cloudinary_api_key,
         api_secret=settings.cloudinary_api_secret,
-        secure=True
+        secure=True,
     )
     try:
-        public_id = f'PhotoShareApp/{current_user.user_name}/{unique_filename}'
-        upload_result = cloudinary.uploader.upload(file.file,
-                                                   public_id=public_id)
-        photo_url = upload_result['secure_url']
+        public_id = f"PhotoShareApp/{current_user.user_name}/{unique_filename}"
+        upload_result = cloudinary.uploader.upload(file.file, public_id=public_id)
+        photo_url = upload_result["secure_url"]
         return photo_url
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error uploading photo: {str(e)}")
 
 
-async def create_photo(description: str, current_user: User, db: Session, file: UploadFile = File()) -> Photo:
+async def create_photo(
+    description: str, current_user: User, db: Session, file: UploadFile = File()
+) -> Photo:
     """
     The create_photo function creates a new photo in the database.
 
@@ -144,22 +152,24 @@ def _get_public_id_from_url(photo_url: str) -> str:
     """
     The _get_public_id_from_url function takes a photo_url as an argument and returns the public_id of that image.
 
-    :param photo_url: photo_url is a string that represents the URL of a photo on the cloudinary server
+    :param photo_url: photo_url is a string that represents the URL of a photo on the
+    cloudinary server
     :type photo_url: str
     :return: The public id of the photo
     :rtype: str
     """
-    parts = photo_url.split('/')
-    index = parts.index('PhotoShareApp')
+    parts = photo_url.split("/")
+    index = parts.index("PhotoShareApp")
     parts = parts[index:]
-    parts[-1] = parts[-1].split('.')[0]
-    public_id = '/'.join(parts)
+    parts[-1] = parts[-1].split(".")[0]
+    public_id = "/".join(parts)
     return public_id
 
 
 def _delete_photo_from_cloudinary(photo_url: str):
     """
-    The _delete_photo_from_cloudinary function takes in a photo_url parameter, which is the URL of the photo to be deleted.
+    The _delete_photo_from_cloudinary function takes in a photo_url parameter, which is
+    the URL of the photo to be deleted.
     It then uses Cloudinary's Python SDK to delete that image from Cloudinary
 
     :param photo_url: Pass the photo url to the function
@@ -172,10 +182,12 @@ def _delete_photo_from_cloudinary(photo_url: str):
         cloud_name=settings.cloudinary_name,
         api_key=settings.cloudinary_api_key,
         api_secret=settings.cloudinary_api_secret,
-        secure=True
+        secure=True,
     )
     public_ids = _get_public_id_from_url(photo_url)
-    image_delete_result = cloudinary.api.delete_resources(public_ids, resource_type="image", type="upload")
+    image_delete_result = cloudinary.api.delete_resources(
+        public_ids, resource_type="image", type="upload"
+    )
     print(image_delete_result)
 
 
@@ -267,9 +279,9 @@ async def add_tags_to_photo(tag: Tag, photo, db: Session) -> Photo:
 
 
 async def get_tags_by_photo_id(photo_id: int, db: Session) -> List[Tag]:
-
     """
-    The get_tags_by_photo_id function returns a list of tags associated with the photo_id provided.
+    The get_tags_by_photo_id function returns a list of tags associated with the
+    photo_id provided.
 
     :param photo_id: Specify the photo_id of the photo we want to get tags for
     :type photo_id: int
@@ -283,34 +295,11 @@ async def get_tags_by_photo_id(photo_id: int, db: Session) -> List[Tag]:
 
 
 async def update_photo_description(
-        photo: Photo,
-        new_description: str,
-        db: Session
+    photo: Photo, new_description: str, db: Session
 ) -> Photo:
     """
-    The update_photo_description function updates the description of a photo in the database.
-
-    :param photo: Identify which photo to update
-    :type photo: Photo
-    :param new_description: Update the photo's description
-    :type new_description: str
-    :param db: Session: Pass the database session to the function
-    :type db: Session
-    :return: The updated photo object
-    """
-    photo.description = new_description
-    db.commit()
-    db.refresh(photo)
-    return photo
-
-
-async def update_photo_description(
-        photo: Photo,
-        new_description: str,
-        db: Session
-) -> Photo:
-    """
-    The update_photo_description function updates the description of a photo in the database.
+    The update_photo_description function updates the description of a photo in the
+    database.
 
     :param photo: Identify which photo to update
     :type photo: Photo

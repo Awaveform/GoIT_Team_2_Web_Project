@@ -10,7 +10,10 @@ from sqlalchemy.orm import Session
 
 from src.cache.async_redis import get_redis
 from src.database.db import get_db
-from src.database.models import User, UserRole, Role, Photo
+from src.database.models.photo import Photo
+from src.database.models.role import Role
+from src.database.models.user import User
+from src.database.models.user_role import UserRole
 from src.repository.photos import get_photos_by_user_id
 from src.schemas import UserModel, UserRoleModel
 from src.enums import Roles

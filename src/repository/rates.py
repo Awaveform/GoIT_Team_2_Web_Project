@@ -2,7 +2,7 @@ from typing import Type
 
 from sqlalchemy.orm import Session, Query
 
-from src.database.models import Rate
+from src.database.models.rate import Rate
 
 
 async def _filter_by(query: Query[Type[Rate]], **kw) -> Query[Type[Rate]]:
@@ -20,7 +20,7 @@ async def _filter_by(query: Query[Type[Rate]], **kw) -> Query[Type[Rate]]:
     filter_by_data = {
         "id": kw.get("id"),
         "photo_id": kw.get("photo_id"),
-        "created_by": kw.get("created_by")
+        "created_by": kw.get("created_by"),
     }
 
     for key, value in filter_by_data.items():
@@ -34,10 +34,7 @@ async def _filter_by(query: Query[Type[Rate]], **kw) -> Query[Type[Rate]]:
 
 
 async def create_rate_photo(
-    photo_id: int,
-    grade: int,
-    user_id: int,
-    db: Session
+    photo_id: int, grade: int, user_id: int, db: Session
 ) -> Rate:
     """
     Creates a new rate for a photo.
@@ -53,11 +50,7 @@ async def create_rate_photo(
     :return: The newly created Rate object.
     :rtype: Rate
     """
-    new_rate = Rate(
-        grade=grade,
-        photo_id=photo_id,
-        created_by=user_id
-    )
+    new_rate = Rate(grade=grade, photo_id=photo_id, created_by=user_id)
     db.add(new_rate)
     db.commit()
     db.refresh(new_rate)

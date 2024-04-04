@@ -10,10 +10,10 @@ from redis.asyncio import Redis
 from sqlalchemy.orm import Session
 
 from src.cache.async_redis import get_redis
-from src.database.models import Role
+from src.database.db import get_db
+from src.database.models.role import Role
 from src.schemas import UserDetailedResponse
 from src.repository import users as repository_users
-from src.security.role_permissions import RoleChecker
 
 router = APIRouter(prefix="/users", tags=["users"])
 security = HTTPBearer()
@@ -24,9 +24,7 @@ security = HTTPBearer()
     response_model=Optional[UserDetailedResponse],
 )
 async def get_user_info(
-    user_name: str,
-    db: Session = Depends(RoleChecker(allowed_roles=["admin"])),
-    r: Redis = Depends(get_redis)
+    user_name: str, db: Session = Depends(get_db), r: Redis = Depends(get_redis)
 ):
     """
     Method that returns the full user info for the specific user.

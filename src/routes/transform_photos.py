@@ -7,7 +7,8 @@ from sqlalchemy.orm import Session
 from starlette.responses import StreamingResponse
 
 from src.database.db import get_db
-from src.database.models import Photo, User
+from src.database.models.photo import Photo
+from src.database.models.user import User
 from src.repository.users import get_current_user
 from src.schemas import (
     TransformedPhotoModelResponse,
