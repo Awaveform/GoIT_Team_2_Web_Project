@@ -169,6 +169,7 @@ class CommentResponse(CommentSchema):
     class Config:
         from_attributes = True
 
+
 class ListRatesModelResponse(BaseModel):
     rates: list[RateModelResponse]
 

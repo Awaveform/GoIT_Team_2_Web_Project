@@ -8,15 +8,10 @@ from src.database.models.rate import Rate
 
 
 class TestFilterBy(unittest.IsolatedAsyncioTestCase):
-
     def setUp(self):
-
         self.query = MagicMock(spec=Query[Rate])
-        self.filter_by_data = {
-            "photo_id": 1,
-            "created_by": 2
-        }
-    
+        self.filter_by_data = {"photo_id": 1, "created_by": 2}
+
     async def test_valid_arguments(self):
         self.query.filter().filter.return_value = self.query
 
@@ -34,5 +29,5 @@ class TestFilterBy(unittest.IsolatedAsyncioTestCase):
 
     async def test_without_sort_arguments(self):
         result = await _filter_by(query=self.query)
-        
+
         self.assertEqual(self.query, result)

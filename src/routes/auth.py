@@ -76,8 +76,10 @@ async def signup(
     response_model=Optional[TokenModelResponse],
 )
 async def create_session(
-    user: TokenModel, authorize: AuthJWT = Depends(), db: Session = Depends(get_db),
-    r: Redis = Depends(get_redis)
+    user: TokenModel,
+    authorize: AuthJWT = Depends(),
+    db: Session = Depends(get_db),
+    r: Redis = Depends(get_redis),
 ):
     """
     The create_session function creates a new session for the user.

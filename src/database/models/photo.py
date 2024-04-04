@@ -7,6 +7,7 @@ from sqlalchemy.sql.sqltypes import Boolean
 
 from src.database.models.base import BaseFields, Base
 from src.database.models.photo_tag import photos_tags
+from src.database.models.tag import Tag
 
 
 class Photo(Base, BaseFields):
@@ -19,11 +20,15 @@ class Photo(Base, BaseFields):
         Integer, ForeignKey("users.id", ondelete="CASCADE")
     )
     updated_by: Mapped[int] = mapped_column(
-        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True,
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=True,
     )
     original_photo_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("photos.id", ondelete="CASCADE"), nullable=True,
-        default=None
+        Integer,
+        ForeignKey("photos.id", ondelete="CASCADE"),
+        nullable=True,
+        default=None,
     )
     is_transformed: Mapped[bool] = mapped_column(Boolean, nullable=True, default=False)
     tags = relationship("Tag", secondary="photos_tags", back_populates="photos")

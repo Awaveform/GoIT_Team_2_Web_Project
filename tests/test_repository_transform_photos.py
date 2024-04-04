@@ -16,7 +16,7 @@ from src.repository.transform_photos import (
     _save_transformed_photo_to_db,
     _update_orig_photo_with_transformed_photo,
     _create_transformed_photo_in_db,
-    generate_photo_qr_code
+    generate_photo_qr_code,
 )
 from src.schemas import TransformPhotoModel, PhotoQrCodeModel
 from src.utils.qr_code import module_drawer_map, color_mask_map
@@ -147,7 +147,7 @@ class TestTransformPhotos(unittest.IsolatedAsyncioTestCase):
             to_override=True,
             description=transformed_photo_desc,
             effect=PhotoEffect.BLUR.value,
-            gravity=PhotoGravity.FACES.value
+            gravity=PhotoGravity.FACES.value,
         )
         transformed_photo: Type[Photo] = await apply_transformation(
             photo=orig_photo,
@@ -195,7 +195,7 @@ class TestTransformPhotos(unittest.IsolatedAsyncioTestCase):
 
     @patch("cloudinary.uploader.upload")
     async def test_apply_transformation_to_override_error_upload(
-            self, mock_cloud_upload
+        self, mock_cloud_upload
     ):
         mock_cloud_upload.side_effect = cloudinary.exceptions.Error("upload error")
 
@@ -243,33 +243,55 @@ class TestGenerateQrCodeForPhotos(unittest.IsolatedAsyncioTestCase):
         self.photo_id = 1
 
     async def test_generate_photo_qr_code(self):
-        photo: Photo = Photo(
-            id=self.photo_id, url=self.photo_url
-        )
-        params = [PhotoQrCodeModel(module_drawer=QrModuleDrawer.VERTICAL,
-                                   color_mask=QrColorMask.VERTICAL, box_size=10),
-                  PhotoQrCodeModel(module_drawer=QrModuleDrawer.SQUARE,
-                                   color_mask=QrColorMask.RADIAL, box_size=5),
-                  PhotoQrCodeModel(module_drawer=QrModuleDrawer.CIRCLE,
-                                   color_mask=QrColorMask.SOLID, box_size=100.5)
-                  ]
+        photo: Photo = Photo(id=self.photo_id, url=self.photo_url)
+        params = [
+            PhotoQrCodeModel(
+                module_drawer=QrModuleDrawer.VERTICAL,
+                color_mask=QrColorMask.VERTICAL,
+                box_size=10,
+            ),
+            PhotoQrCodeModel(
+                module_drawer=QrModuleDrawer.SQUARE,
+                color_mask=QrColorMask.RADIAL,
+                box_size=5,
+            ),
+            PhotoQrCodeModel(
+                module_drawer=QrModuleDrawer.CIRCLE,
+                color_mask=QrColorMask.SOLID,
+                box_size=100.5,
+            ),
+        ]
         for param_set in params:
-            img: StyledPilImage = await generate_photo_qr_code(photo=photo,
-                                                               params=param_set)
+            img: StyledPilImage = await generate_photo_qr_code(
+                photo=photo, params=param_set
+            )
             assert isinstance(img, StyledPilImage)
             assert img.box_size == param_set.box_size
-            assert isinstance(img.color_mask, color_mask_map[param_set.color_mask.value])
-            assert isinstance(img.module_drawer, module_drawer_map[
-                param_set.module_drawer.value])
+            assert isinstance(
+                img.color_mask, color_mask_map[param_set.color_mask.value]
+            )
+            assert isinstance(
+                img.module_drawer, module_drawer_map[param_set.module_drawer.value]
+            )
 
     async def test_generate_photo_qr_code_w_incorrect_params(self):
-        params = [{"module_drawer": "Test module drawer",
-                   "color_mask": QrColorMask.VERTICAL, "box_size": 10},
-                  {"module_drawer": QrModuleDrawer.SQUARE,
-                   "color_mask": "Test color mask", "box_size": 10},
-                  {"module_drawer": QrModuleDrawer.CIRCLE,
-                   "color_mask": QrColorMask.RADIAL, "box_size": -1},
-                  ]
+        params = [
+            {
+                "module_drawer": "Test module drawer",
+                "color_mask": QrColorMask.VERTICAL,
+                "box_size": 10,
+            },
+            {
+                "module_drawer": QrModuleDrawer.SQUARE,
+                "color_mask": "Test color mask",
+                "box_size": 10,
+            },
+            {
+                "module_drawer": QrModuleDrawer.CIRCLE,
+                "color_mask": QrColorMask.RADIAL,
+                "box_size": -1,
+            },
+        ]
         for param_set in params:
             try:
                 PhotoQrCodeModel(**param_set)

@@ -1,8 +1,8 @@
 from sqlalchemy import Integer, String
-from sqlalchemy.orm import mapped_column, Mapped
+from sqlalchemy.orm import mapped_column, Mapped, relationship
 
+from src.database.models.base import Base
 from src.enums import Roles
-from base import Base
 
 
 class Role(Base):

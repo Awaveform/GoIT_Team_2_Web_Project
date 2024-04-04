@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from sqlalchemy import Integer
 from sqlalchemy.orm import relationship, Mapped, mapped_column
-from sqlalchemy.sql.schema import ForeignKey
+from sqlalchemy.sql.schema import ForeignKey, UniqueConstraint
 
 from src.database.models.base import BaseFields, Base
 
@@ -13,5 +13,4 @@ class UserRole(Base, BaseFields):
     user_id = mapped_column(Integer, ForeignKey("users.id"))
     role_id = mapped_column(Integer, ForeignKey("roles.id"), nullable=False)
 
-    user = relationship("User", backref="user_roles")
-    role = relationship("Role")
+    __table_args__ = (UniqueConstraint("user_id", "role_id"),)

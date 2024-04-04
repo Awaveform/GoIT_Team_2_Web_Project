@@ -37,7 +37,10 @@ color_mask_map = {
 
 
 def generate_qr_code(
-    photo_url: str, module_drawer: QrModuleDrawer, color_mask: QrColorMask, box_size: int
+    photo_url: str,
+    module_drawer: QrModuleDrawer,
+    color_mask: QrColorMask,
+    box_size: int,
 ) -> StyledPilImage:
     """
     Method generates QR code with passed parameters and holds the photo URL.
@@ -53,8 +56,9 @@ def generate_qr_code(
     :return: QR code image.
     :rtype: StyledPilImage.
     """
-    qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_L,
-                       box_size=box_size)
+    qr = qrcode.QRCode(
+        error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=box_size
+    )
     qr.add_data(photo_url)
     img = qr.make_image(
         image_factory=StyledPilImage,

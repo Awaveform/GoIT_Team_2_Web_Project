@@ -159,7 +159,7 @@ async def apply_transformation(
         secure=True,
     )
     try:
-        public_id = f'PhotoShareApp/{updated_by.user_name}/{str(uuid.uuid4())}'
+        public_id = f"PhotoShareApp/{updated_by.user_name}/{str(uuid.uuid4())}"
         transformed_img = uploader.upload(
             photo.url,
             public_id=public_id,
@@ -204,5 +204,5 @@ async def generate_photo_qr_code(
         photo_url=photo.url,
         module_drawer=params.module_drawer,
         color_mask=params.color_mask,
-        box_size=params.box_size
+        box_size=params.box_size,
     )

@@ -24,9 +24,7 @@ security = HTTPBearer()
     response_model=Optional[UserDetailedResponse],
 )
 async def get_user_info(
-    user_name: str,
-    db: Session = Depends(get_db),
-    r: Redis = Depends(get_redis)
+    user_name: str, db: Session = Depends(get_db), r: Redis = Depends(get_redis)
 ):
     """
     Method that returns the full user info for the specific user.
