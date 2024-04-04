@@ -13,4 +13,7 @@ class UserRole(Base, BaseFields):
     user_id = mapped_column(Integer, ForeignKey("users.id"))
     role_id = mapped_column(Integer, ForeignKey("roles.id"), nullable=False)
 
+    user = relationship("User", backref="user_roles")
+    role = relationship("Role")
+
     __table_args__ = (UniqueConstraint("user_id", "role_id"),)

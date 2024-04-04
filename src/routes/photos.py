@@ -14,6 +14,7 @@ from fastapi.security import (
 
 from src.cache.async_redis import get_redis
 from src.database.models.user import User
+from src.enums import Roles
 from src.repository import users as repository_users
 from src.repository import photos as repository_photos
 from src.database.db import get_db
@@ -94,7 +95,10 @@ async def delete_photo(
             status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found"
         )
 
-    if current_user_role.name == "admin" or photo.created_by == current_user.id:
+    if (
+        current_user_role.name == Roles.ADMIN.value
+        or photo.created_by == current_user.id
+    ):
         deleted_photo = await repository_photos.delete_photo(photo=photo, db=db)
     else:
         raise HTTPException(
@@ -178,8 +182,8 @@ async def update_photo_description(
         raise HTTPException(status_code=404, detail="Photo not found")
 
     if photo.created_by == current_user.id or current_user_role.name in {
-        "admin",
-        "moderator",
+        Roles.ADMIN.value,
+        Roles.MODERATOR.value,
     }:
         updated_photo = await repository_photos.update_photo_description(
             photo, new_description, db

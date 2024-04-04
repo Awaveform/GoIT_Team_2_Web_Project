@@ -6,11 +6,13 @@ from fastapi.security import (
     HTTPBearer,
 )
 from fastapi_jwt_auth import AuthJWT
+from fastapi_limiter.depends import RateLimiter
 from redis.asyncio import Redis
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from src.cache.async_redis import get_redis
+from src.conf.config import settings
 from src.database.db import get_db
 from src.database.models.user import User
 from src.schemas import UserModel, UserResponse, TokenModelResponse, TokenModel
@@ -27,6 +29,10 @@ security = HTTPBearer()
     "/users",
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED,
+    description=f"No more than {settings.rate_limit_requests_per_minute} requests per minute",
+    dependencies=[
+        Depends(RateLimiter(times=settings.rate_limit_requests_per_minute, seconds=60))
+    ],
 )
 async def signup(
     body: UserModel, db: Session = Depends(get_db), r: Redis = Depends(get_redis)
@@ -74,6 +80,10 @@ async def signup(
 @router.post(
     "/login",
     response_model=Optional[TokenModelResponse],
+    description=f"No more than {settings.rate_limit_requests_per_minute} requests per minute",
+    dependencies=[
+        Depends(RateLimiter(times=settings.rate_limit_requests_per_minute, seconds=60))
+    ],
 )
 async def create_session(
     user: TokenModel,
@@ -105,6 +115,7 @@ async def create_session(
         refresh_token = authorize.create_refresh_token(subject=_user.user_name)
 
         _user.refresh_token = refresh_token
+        db.add(_user)
         db.commit()
 
         return {
@@ -118,7 +129,11 @@ async def create_session(
 
 @router.get(
     "/refresh_token",
-    response_model=TokenModel,
+    response_model=TokenModelResponse,
+    description=f"No more than {settings.rate_limit_requests_per_minute} requests per minute",
+    dependencies=[
+        Depends(RateLimiter(times=settings.rate_limit_requests_per_minute, seconds=60))
+    ],
 )
 async def refresh_token(
     refresh_token: str = Header(..., alias="Authorization"),
@@ -143,17 +158,17 @@ async def refresh_token(
     authorize.jwt_refresh_token_required()
     # Check if refresh token is in DB
     user_name = authorize.get_jwt_subject()
-    user = db.query(User).filter(and_(user_name == User.email)).first()
+    user = db.query(User).filter(and_(user_name == User.user_name)).first()
     if f"Bearer {user.refresh_token}" == refresh_token:
         access_token = authorize.create_access_token(subject=user_name)
         new_refresh_token = authorize.create_refresh_token(subject=user_name)
 
         user.refresh_token = new_refresh_token
+        db.add(user)
         db.commit()
         return {
             "access_token": access_token,
             "refresh_token": new_refresh_token,
             "token_type": "bearer",
         }
-
     raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
