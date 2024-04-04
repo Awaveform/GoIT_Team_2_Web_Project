@@ -15,15 +15,22 @@ from src.enums import Roles
 Base = declarative_base()
 
 
-class UserRole(Base):
-    __tablename__ = "users_roles"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    user_id = mapped_column(Integer, ForeignKey("users.id"))
-    role_id = mapped_column(Integer, ForeignKey("roles.id"), nullable=False)
+class BaseFields:
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, nullable=True, onupdate=func.now()
     )
+
+
+class UserRole(Base, BaseFields):
+    __tablename__ = "users_roles"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id = mapped_column(Integer, ForeignKey("users.id"))
+    role_id = mapped_column(Integer, ForeignKey("roles.id"), nullable=False)
+    # created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
+    # updated_at: Mapped[datetime] = mapped_column(
+    #     DateTime, nullable=True, onupdate=func.now()
+    # )
     user = relationship("User", backref="user_roles")
     role = relationship("Role")
 
@@ -35,7 +42,7 @@ class Role(Base):
     name: Mapped[Roles] = mapped_column(String(50), nullable=False, unique=True)
 
 
-class User(Base):
+class User(Base, BaseFields):
     __tablename__ = "users"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -43,10 +50,10 @@ class User(Base):
     last_name: Mapped[str] = mapped_column(String(50), nullable=False)
     user_name: Mapped[str] = mapped_column(String(250), nullable=False, unique=True)
     password: Mapped[str] = mapped_column(String(255), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, nullable=True, onupdate=func.now()
-    )
+    # created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
+    # updated_at: Mapped[datetime] = mapped_column(
+    #     DateTime, nullable=True, onupdate=func.now()
+    # )
     refresh_token: Mapped[str] = mapped_column(String(1255), nullable=True)
 
 
@@ -61,15 +68,15 @@ photos_tags = Table(
 )
 
 
-class Photo(Base):
+class Photo(Base, BaseFields):
     __tablename__ = "photos"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     url: Mapped[str] = mapped_column(String(1000))
     description: Mapped[str] = mapped_column(String(500), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, nullable=True, onupdate=func.now()
-    )
+    # created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
+    # updated_at: Mapped[datetime] = mapped_column(
+    #     DateTime, nullable=True, onupdate=func.now()
+    # )
 
     created_by: Mapped[int] = mapped_column(
         Integer, ForeignKey("users.id", ondelete="CASCADE")
@@ -87,14 +94,14 @@ class Photo(Base):
     # correctness of this relationship
 
 
-class Tag(Base):
+class Tag(Base, BaseFields):
     __tablename__ = "tags"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(100), unique=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, nullable=True, onupdate=func.now()
-    )
+    # created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
+    # updated_at: Mapped[datetime] = mapped_column(
+    #     DateTime, nullable=True, onupdate=func.now()
+    # )
 
     created_by: Mapped[int] = mapped_column(
         Integer, ForeignKey("users.id", ondelete="CASCADE")
@@ -104,14 +111,14 @@ class Tag(Base):
     # correctness of this relationship
 
 
-class PhotoComment(Base):
+class PhotoComment(Base, BaseFields):
     __tablename__ = "photos_comments"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     comment: Mapped[str] = mapped_column(String(500), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, nullable=True, onupdate=func.now()
-    )
+    # created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
+    # updated_at: Mapped[datetime] = mapped_column(
+    #     DateTime, nullable=True, onupdate=func.now()
+    # )
 
     photo_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("photos.id", ondelete="CASCADE")
@@ -121,14 +128,14 @@ class PhotoComment(Base):
     )
 
 
-class Rate(Base):
+class Rate(Base, BaseFields):
     __tablename__ = "rates"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     grade: Mapped[int] = mapped_column(Integer)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, nullable=True, onupdate=func.now()
-    )
+    # created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
+    # updated_at: Mapped[datetime] = mapped_column(
+    #     DateTime, nullable=True, onupdate=func.now()
+    # )
 
     photo_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("photos.id", ondelete="CASCADE")
