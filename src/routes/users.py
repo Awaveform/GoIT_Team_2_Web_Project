@@ -88,7 +88,6 @@ async def block_user(
         )
     user = await repository_users.block_user(user, db=db)
     role: Type[Role] = await repository_users.get_user_role(user_id=user.id, db=db, r=r)
-    # return user
     return UserResponse(
         id=user.id,
         is_active=user.is_active,
