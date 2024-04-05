@@ -10,4 +10,8 @@ async def get_redis() -> Redis:
     :return: Redis instance.
     :rtype: redis.asyncio.Redis.
     """
-    return await Redis(host=settings.redis_host, port=settings.redis_port)
+    return await Redis(
+        host=settings.redis_host,
+        port=settings.redis_port,
+        password=settings.password
+    )
