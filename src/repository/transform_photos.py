@@ -122,14 +122,13 @@ async def _save_transformed_photo_to_db(
             updated_by=updated_by,
             photo_description=photo_description,
         )
-    else:
-        return await _create_transformed_photo_in_db(
-            db=db,
-            orig_photo=orig_photo,
-            photo_url=transformed_photo_url,
-            updated_by=updated_by,
-            photo_description=photo_description,
-        )
+    return await _create_transformed_photo_in_db(
+        db=db,
+        orig_photo=orig_photo,
+        photo_url=transformed_photo_url,
+        updated_by=updated_by,
+        photo_description=photo_description,
+    )
 
 
 async def apply_transformation(
@@ -137,7 +136,7 @@ async def apply_transformation(
     updated_by: User,
     body: TransformPhotoModel,
     db: Session,
-) -> Type[Photo]:
+) -> HTTPException | Type[Photo] | None | Photo:
     """
     Method that applies transformation for the existing photo and save info to DB to
     the table public.photos.

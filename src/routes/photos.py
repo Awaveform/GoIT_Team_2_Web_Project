@@ -35,6 +35,24 @@ async def get_photos(
     limit: int = Query(10, gt=0, le=1000),
     skip: int = Query(0, ge=0),
 ):
+    """
+    Retrieve photos from the database.
+
+    :param db: Session: Database session.
+    :type db: Session
+    :param r: Redis: Redis connection.
+    :type r: Redis
+    :param user_id: Optional[int]: User ID to filter photos by user.
+    :type user_id: Optional[int]
+    :param photo_id: Optional[int]: Photo ID to retrieve a specific photo.
+    :type photo_id: Optional[int]
+    :param limit: int: Maximum number of photos to retrieve (default: 10, maximum: 1000).
+    :type limit: int
+    :param skip: int: Number of records to skip before starting to return photos.
+    :type skip: int
+    :return: Dictionary containing a list of photos or a single photo.
+    :rtype: Dict[str, Union[List[PhotoResponse], PhotoResponse]]
+    """
     if user_id is not None:
         user_exists = await repository_users.get_user_by_user_id(user_id, db, r)
         if not user_exists:
@@ -64,6 +82,20 @@ async def create_photo(
     current_user: User = Depends(repository_users.get_current_user),
     file: UploadFile = File(),
 ):
+    """
+    Create a new photo.
+
+    :param description: Optional[str]: Description of the photo.
+    :type description: Optional[str]
+    :param db: Session: Database session.
+    :type db: Session
+    :param current_user: User: Current authenticated user.
+    :type current_user: User
+    :param file: UploadFile: Image file to upload.
+    :type file: UploadFile
+    :return: PhotoResponse: Response containing the created photo information.
+    :rtype: PhotoResponse
+    """
     new_photo = await repository_photos.create_photo(
         description=description, current_user=current_user, db=db, file=file
     )
@@ -84,6 +116,20 @@ async def delete_photo(
     current_user: User = Depends(repository_users.get_current_user),
     r: Redis = Depends(get_redis),
 ):
+    """
+    Delete a photo.
+
+    :param photo_id: int: ID of the photo to delete.
+    :type photo_id: int
+    :param db: Session: Database session.
+    :type db: Session
+    :param current_user: User: Current authenticated user.
+    :type current_user: User
+    :param r: Redis: Redis connection.
+    :type r: Redis
+    :return: PhotoResponse: Response containing the deleted photo information.
+    :rtype: PhotoResponse
+    """
     current_user_role = await repository_users.get_user_role(
         user_id=current_user.id, db=db, r=r
     )
@@ -122,6 +168,20 @@ async def add_tags(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """
+    Add tags to a photo.
+
+    :param photo_id: int: ID of the photo.
+    :type photo_id: int
+    :param tag_names: Optional[list[str]]: List of tag names to add.
+    :type tag_names: Optional[list[str]]
+    :param current_user: User: Current authenticated user.
+    :type current_user: User
+    :param db: Session: Database session.
+    :type db: Session
+    :return: PhotoResponseWithTags: Response containing the updated photo information with tags.
+    :rtype: PhotoResponseWithTags
+    """
     if not tag_names:
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -168,6 +228,22 @@ async def update_photo_description(
     db: Session = Depends(get_db),
     r: Redis = Depends(get_redis),
 ):
+    """
+    Update the description of a photo.
+
+    :param photo_id: int: ID of the photo.
+    :type photo_id: int
+    :param new_description: Optional[str]: New description for the photo.
+    :type new_description: Optional[str]
+    :param current_user: User: Current authenticated user.
+    :type current_user: User
+    :param db: Session: Database session.
+    :type db: Session
+    :param r: Redis: Redis connection.
+    :type r: Redis
+    :return: PhotoUpdate: Response containing the updated photo information.
+    :rtype: PhotoUpdate
+    """
     if not new_description.strip():
         raise HTTPException(
             status_code=400, detail="Bad request. Description can not be empty."

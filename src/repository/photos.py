@@ -45,7 +45,7 @@ async def get_photo_by_photo_id(photo_id: int, db: Session):
 
 async def get_all_photo(db: Session, skip, limit):
     """
-    The get_all_photo function returns a list of all photos in the database.
+    Returns a list of all photos in the database.
 
     :param db: Pass the database session to the function
     :type db: Session
@@ -62,7 +62,7 @@ async def get_all_photo(db: Session, skip, limit):
 
 async def get_photo_by_photo_id_and_user_id(photo_id: int, user_id: int, db: Session):
     """
-    Method that returns the uploaded photo by the photo identifier.
+    Returns the uploaded photo by the photo identifier.
 
     :param photo_id: Photo identifier.
     :type photo_id: int.
@@ -80,14 +80,17 @@ async def get_photo_by_photo_id_and_user_id(photo_id: int, user_id: int, db: Ses
     )
 
 
-# TODO: AR refactor -move logic and exeption to routs
 def _upload_photo_to_cloudinary(current_user: User, file: UploadFile = File()) -> str:
     """
-    The upload_photo_to_cloudinary function uploads a photo to the cloudinary server.
-    It takes in three parameters: current_user, file, and description. The current_user parameter is used to
-    create a unique public id for each user's photos on the cloudinary server, while the file
-    parameter is used to upload an image from our local machine onto the cloudinary server. The description
-    parameter is an optional parameter to provide additional information about the photo.
+    Uploads a photo to the cloudinary server.
+    It takes in three parameters: current_user, file, and description.
+    The current_user parameter is used to
+    create a unique public id for each user's photos on the cloudinary server,
+    while the file
+    parameter is used to upload an image from our local machine onto the
+    cloudinary server. The description
+    parameter is an optional parameter to provide additional information
+    about the photo.
 
     :param current_user: Get the username of the user who is currently logged in
     :type current_user: User
@@ -123,10 +126,11 @@ def _upload_photo_to_cloudinary(current_user: User, file: UploadFile = File()) -
 
 
 async def create_photo(
-    description: str, current_user: User, db: Session, file: UploadFile = File()
+        description: str, current_user: User, db: Session,
+        file: UploadFile = File()
 ) -> Photo:
     """
-    The create_photo function creates a new photo in the database.
+    Creates a new photo in the database.
 
     :param description: Specify the description of the photo
     :type description: str
@@ -150,9 +154,10 @@ async def create_photo(
 
 def _get_public_id_from_url(photo_url: str) -> str:
     """
-    The _get_public_id_from_url function takes a photo_url as an argument and returns the public_id of that image.
+    Returns the public_id of that image.
 
-    :param photo_url: photo_url is a string that represents the URL of a photo on the
+    :param photo_url: photo_url is a string that represents the URL of a photo
+    on the
     cloudinary server
     :type photo_url: str
     :return: The public id of the photo
@@ -168,8 +173,8 @@ def _get_public_id_from_url(photo_url: str) -> str:
 
 def _delete_photo_from_cloudinary(photo_url: str):
     """
-    The _delete_photo_from_cloudinary function takes in a photo_url parameter, which is
-    the URL of the photo to be deleted.
+    The _delete_photo_from_cloudinary function takes in a photo_url parameter,
+    which is the URL of the photo to be deleted.
     It then uses Cloudinary's Python SDK to delete that image from Cloudinary
 
     :param photo_url: Pass the photo url to the function
@@ -193,7 +198,8 @@ def _delete_photo_from_cloudinary(photo_url: str):
 
 async def delete_photo(photo: Photo, db: Session):
     """
-    The delete_photo_by_id function deletes a photo from the database and cloudinary.
+    The delete_photo_by_id function deletes a photo from the database and
+    cloudinary.
 
     :param photo: Photo to be deleted
     :type photo: Photo
@@ -278,7 +284,7 @@ async def add_tags_to_photo(tag: Tag, photo, db: Session) -> Photo:
     return photo
 
 
-async def get_tags_by_photo_id(photo_id: int, db: Session) -> List[Tag]:
+async def get_tags_by_photo_id(photo_id: int, db: Session) -> list[Type[Tag]]:
     """
     The get_tags_by_photo_id function returns a list of tags associated with the
     photo_id provided.

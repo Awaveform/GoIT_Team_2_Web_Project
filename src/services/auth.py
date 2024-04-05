@@ -7,9 +7,12 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
     Method verifies the password string with the hashed password string.
 
-    :param plain_password: User password string.
-    :param hashed_password: Hashed password.
-    :return: True or False if the passwords are equal.
+    :param plain_password: str: User password string.
+    :type plain_password: str
+    :param hashed_password: str: Hashed password.
+    :type hashed_password: str
+    :return: bool: True or False if the passwords are equal.
+    :rtype: bool
     """
     return pwd_context.verify(plain_password, hashed_password)
 

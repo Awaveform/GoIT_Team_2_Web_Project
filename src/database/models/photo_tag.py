@@ -7,6 +7,7 @@ from sqlalchemy.sql.sqltypes import DateTime
 
 from src.database.models.base import Base
 
+
 photos_tags = Table(
     "photos_tags",
     Base.metadata,
