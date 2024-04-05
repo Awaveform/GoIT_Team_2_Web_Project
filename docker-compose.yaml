@@ -2,7 +2,7 @@ version: '1'
 services:
   redis:
     image: redis:alpine
-    command: [ "redis-server", "--bind", "0.0.0.0" ]
+    command: [ "redis-server", "--bind", "127.0.0.1" ]
     environment:
       - REDIS_URL=redis://default:${REDIS_PASSWORD}@redis-10890.c311.eu-central-1-1.ec2.cloud.redislabs.com:10890
 #    ports:
