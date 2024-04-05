@@ -4,6 +4,7 @@ from sqlalchemy import Integer, String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.database.models.base import BaseFields, Base
+from src.database.models.photo_tag import photos_tags
 
 
 class Tag(Base, BaseFields):

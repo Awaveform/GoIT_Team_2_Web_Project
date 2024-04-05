@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from sqlalchemy import Integer, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql.sqltypes import Boolean
 
 from src.database.models.base import BaseFields, Base
