@@ -21,6 +21,8 @@ from src.database.db import get_db
 from src.repository.users import get_current_user
 from src.schemas import PhotoResponseWithTags
 from src.schemas import PhotoResponse, PhotoUpdate
+from fastapi.responses import JSONResponse
+
 
 router = APIRouter(prefix="/photos", tags=["photos"])
 security = HTTPBearer()
@@ -70,7 +72,10 @@ async def get_photos(
     )
 
     if not photos:
-        return Response(status_code=status.HTTP_204_NO_CONTENT)
+        return JSONResponse(
+            status_code=status.HTTP_204_NO_CONTENT,
+            content={"message": "No content"}
+        )
 
     return {"photos": photos}
 
