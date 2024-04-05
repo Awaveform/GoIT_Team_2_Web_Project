@@ -13,5 +13,5 @@ async def get_redis() -> Redis:
     return await Redis(
         host=settings.redis_host,
         port=settings.redis_port,
-        password=settings.password
+        password=settings.redis_password,
     )
