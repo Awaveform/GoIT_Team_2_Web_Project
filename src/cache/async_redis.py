@@ -16,4 +16,8 @@ async def get_redis() -> Redis:
         host=settings.redis_host,
         port=settings.redis_port,
         password=settings.redis_password,
+        health_check_interval=10,
+        socket_connect_timeout=5,
+        retry_on_timeout=True,
+        socket_keepalive=True
     )
