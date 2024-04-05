@@ -3,7 +3,7 @@ from __future__ import annotations
 import pickle
 from typing import Type, Tuple
 
-from fastapi import Depends
+from fastapi import Depends, HTTPException, status
 from fastapi_jwt_auth import AuthJWT
 from redis.asyncio import Redis
 from sqlalchemy.orm import Session
@@ -17,6 +17,7 @@ from src.database.models.user_role import UserRole
 from src.repository.photos import get_photos_by_user_id
 from src.schemas import UserModel, UserRoleModel
 from src.enums import Roles
+from src.utils.date_convertor import get_seconds_between_curr_date
 
 
 async def get_role(_role: Roles, db: Session, r: Redis) -> Type[Role]:
@@ -148,6 +149,23 @@ async def create_user(
     return new_user, new_user_role
 
 
+async def block_user(user: User, db: Session) -> User:
+    """
+    Method makes user inactive.
+    :param user: User instance.
+    :type user: User.
+    :param db: DB session instance.
+    :type db: Session.
+    :return: User information.
+    :rtype: User.
+    """
+    user.is_active = False
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
 async def get_full_user_info_by_name(
     user_name: str, db: Session, r: Redis
 ) -> Tuple[User, int]:
@@ -214,7 +232,8 @@ async def get_current_user(
     It will use the JWT token in the Authorization header to retrieve and return a User
     object.
 
-    :param r:
+    :param r: Redis instance.
+    :type r: Redis.
     :param authorize: Get the current user's email.
     :type authorize: AuthJWT.
     :param db: Get the database session.
@@ -223,9 +242,16 @@ async def get_current_user(
     :rtype: Type[User].
     """
     authorize.jwt_required()
+    access_token_info: dict = authorize.get_raw_jwt()
 
+    is_valid_token: bool = await is_user_token_valid(
+        access_token_info, r)
+    if not is_valid_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User has made log out. Authorize again."
+        )
     user_name = authorize.get_jwt_subject()
-
     return await get_user_by_user_name(user_name, db, r)
 
 
@@ -254,3 +280,38 @@ async def get_user_by_user_id(
     else:
         current_user = pickle.loads(current_user)
     return current_user
+
+
+async def invalidate_user_token(access_token_info: dict, r: Redis) -> None:
+    """
+    Method caches user's token identifier during a period of token expiration date
+    with a mark as 'invalid token'.
+    :param access_token_info: User access token info.
+    :type access_token_info: dict.
+    :param r: Redis instance.
+    :type r: redis.asyncio.Redis.
+    :return: None.
+    :rtype: None.
+    """
+    token_id: str = access_token_info.get("jti")
+    exp_token: int = access_token_info.get("exp")
+    await r.set(f"invalid_token:{token_id}", pickle.dumps(token_id))
+    cache_exp: int = max(int(get_seconds_between_curr_date(exp_token)), 0)
+    await r.expire(f"invalid_token:{token_id}", cache_exp)
+
+
+async def is_user_token_valid(access_token_info: dict, r: Redis) -> bool:
+    """
+    Method validates if the user's token is invalid or not.
+    :param access_token_info: User access token info.
+    :type access_token_info: dict.
+    :param r: Redis instance.
+    :type r: redis.asyncio.Redis.
+    :return: True if token is valid and False if invalid.
+    :rtype: bool.
+    """
+    token_id: str = access_token_info.get("jti")
+    access_token = await r.get(f"invalid_token:{token_id}")
+    if access_token:
+        return False
+    return True

@@ -111,6 +111,11 @@ async def create_session(
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid password"
             )
+        elif not _user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"User '{_user.user_name}' is not active"
+            )
         access_token = authorize.create_access_token(subject=_user.user_name)
         refresh_token = authorize.create_refresh_token(subject=_user.user_name)
 
@@ -172,3 +177,30 @@ async def refresh_token(
             "token_type": "bearer",
         }
     raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+
+
+@router.post(
+    "/logout",
+    description=f"No more than {settings.rate_limit_requests_per_minute} requests per minute",
+    dependencies=[
+        Depends(RateLimiter(times=settings.rate_limit_requests_per_minute, seconds=60))
+    ],
+)
+async def logout_user(
+    authorize: AuthJWT = Depends(),
+    r: Redis = Depends(get_redis),
+):
+    """
+    Method makes user logout and put the user's token in a cache.
+    :param authorize: AuthJWT instance.
+    :type authorize: AuthJWT.
+    :param r: Redis instance.
+    :type r: Redis.
+    :return: 204 HTTP status code.
+    :rtype: Response.
+    """
+    access_token_info: dict = authorize.get_raw_jwt()
+    if not access_token_info:
+        raise HTTPException(status_code=401, detail="No token provided")
+    await repository_users.invalidate_user_token(
+        access_token_info=access_token_info, r=r)
