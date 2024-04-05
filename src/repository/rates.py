@@ -8,7 +8,8 @@ from src.database.models.rate import Rate
 async def _filter_by(query: Query[Type[Rate]], **kw) -> Query[Type[Rate]]:
     """
     Filters a query for Rate objects based on provided criteria.
-    Filtering criteria can be provided either as single values or as lists of values.
+    Filtering criteria can be provided either as single values or as lists of
+    values.
 
     :param query: The query object to be filtered.
     :type query: Query[Type[Rate]]
@@ -82,5 +83,7 @@ async def delete_rates(rates_id: list[int], db: Session) -> None:
     :param db: The database session object.
     :type db: Session
     """
-    db.query(Rate).filter(Rate.id.in_(rates_id)).delete(synchronize_session=False)
+    db.query(Rate).filter(Rate.id.in_(rates_id)).delete(
+        synchronize_session=False
+    )
     db.commit()

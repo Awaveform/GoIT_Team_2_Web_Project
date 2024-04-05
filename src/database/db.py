@@ -11,7 +11,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # Dependency
 def get_db() -> Session:
     """
-    Method to generate the DB session.
+    Method to generates the DB session.
 
     :return: Db session object
     :rtype: Session

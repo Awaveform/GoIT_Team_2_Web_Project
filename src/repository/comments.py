@@ -15,15 +15,15 @@ async def get_comment(
     comment_id: int, photo_id: int, db: Session
 ) -> PhotoComment | None:
     """
-    The get_comment function returns a comment object from the database.
+    Returns a comment object from the database.
 
-    :param photo_id: Photo identifier.
-    :type photo_id: int.
-    :param comment_id:int: Find the comment in the database
-    :type comment_id:int
-    :param db:Session: Connect to the database
+    :param comment_id: int: Identifier of the comment to be retrieved.
+    :type comment_id: int
+    :param photo_id: int: Identifier of the associated photo.
+    :type photo_id: int
+    :param db: Session: Database session to be used for the operation.
     :type db: Session
-    :return: A photocomment or none
+    :return: A photocomment or None.
     :rtype: PhotoComment | None
     """
     db_request = Select(PhotoComment).filter_by(id=comment_id, photo_id=photo_id)
@@ -39,18 +39,18 @@ async def create_comment(
     db: Session,
 ) -> PhotoComment | None:
     """
-    The create_comment function creates a new comment in the database.
+    Creates a new comment in the database.
 
-    :param photo_id: int: Specify the id of the photo
+    :param photo_id: int: The identifier of the photo.
     :type photo_id: int
-    :param comment: CommentSchema: Specify the comment of the photo
+    :param comment: CommentSchema: The schema containing the comment data.
     :type comment: CommentSchema
-    :param current_user: User: Get the id of the user who is uploading a photo
+    :param current_user: User: The user who is creating the comment.
     :type current_user: User
-    :param db: Session: Connect to the database
+    :param db: Session: The database session.
     :type db: Session
-    :return: A comment object
-    :rtype: PhotoComment | None
+    :return: A comment object if successfully created, otherwise None.
+    :rtype: Union[PhotoComment, None]
     """
     comment = PhotoComment(
         comment=comment.comment,
@@ -72,19 +72,19 @@ async def get_comments(
     db: Session,
 ) -> Sequence:
     """
-    The get_comments function returns a list of comments for the photo with the given id.
-        The limit and offset parameters are used to paginate through results.
+    Returns a list of comments for the photo with the given id.
+    The limit and offset parameters are used to paginate through results.
 
-    :param photo_id: int: Filter the comments by photo id
+    :param photo_id: int: Filter the comments by photo id.
     :type photo_id: int
-    :param limit: int: Limit the number of comments returned
+    :param limit: int: Limit the number of comments returned.
     :type limit: int
-    :param offset: int: Specify the number of records to skip before starting to return rows
+    :param offset: int: Specify the number of records to skip before starting to return rows.
     :type offset: int
-    :param db: Session: Pass the database session to the function
+    :param db: Session: Pass the database session to the function.
     :type db: Session
-    :return: A sequence of photocomment objects
-    :rtype: Sequence
+    :return: A sequence of photocomment objects.
+    :rtype: Sequence[PhotoComment]
     """
     comments = (
         db.query(PhotoComment)
@@ -105,20 +105,20 @@ async def update_comment(
     db: Session,
 ):
     """
-    The update_comment function updates a comment in the database.
+    Updates a comment in the database.
 
-    :param comment_id: int: Identify the comment to be updated
+    :param comment_id: int: Identify the comment to be updated.
     :type comment_id: int
-    :param photo_id: int: Find the comment that is associated with the photo
+    :param photo_id: int: Find the comment that is associated with the photo.
     :type photo_id: int
-    :param updated_comment: CommentSchema: Pass the updated comment to the function
+    :param updated_comment: CommentSchema: Pass the updated comment to the function.
     :type updated_comment: CommentSchema
-    :param current_user: User: Check if the user is logged in and has permissions to update a comment
+    :param current_user: User: Check if the user is logged in and has permissions to update a comment.
     :type current_user: User
-    :param db: Session: Pass in the database session
+    :param db: Session: Pass in the database session.
     :type db: Session
-    :return: A comment object
-    :rtype: PhotoComment | None
+    :return: A comment object if successfully updated, otherwise None.
+    :rtype: Optional[PhotoComment]
     """
     db_request = Select(PhotoComment).filter_by(
         id=comment_id, photo_id=photo_id, created_by=current_user.id
@@ -139,9 +139,9 @@ async def delete_comment(
     db: Session,
 ):
     """
-    The delete_comment function deletes a comment from the database.
+    Deletes a comment from the database.
 
-    :param comment_id:int: Identify the comment to be deleted
+    :param comment_id: int: Identify the comment to be deleted
     :type comment_id: int
     :param photo_id: int: Filter the comments by photo_id
     :type photo_id: int
@@ -149,7 +149,6 @@ async def delete_comment(
     :type db: Session
     :return: A comment object
     :rtype: PhotoComment | None
-
     """
     db_request = Select(PhotoComment).filter_by(id=comment_id, photo_id=photo_id)
     comment = db.execute(db_request)

@@ -2,12 +2,18 @@ import enum
 
 
 class Roles(enum.Enum):
+    """
+    Enumeration representing user roles.
+    """
     ADMIN = "admin"
     MODERATOR = "moderator"
     USER = "user"
 
 
 class PhotoEffect(enum.Enum):
+    """
+    Enumeration representing photo effects.
+    """
     SHARPEN = "sharpen"
     ENHANCE = "enhance"
     GEN_RESTORE = "gen_restore"
@@ -21,12 +27,18 @@ class PhotoEffect(enum.Enum):
 
 
 class PhotoCrop(enum.Enum):
+    """
+    Enumeration representing photo cropping options.
+    """
     FILL = "fill"
     SCALE = "scale"
     PAD = "pad"
 
 
 class PhotoGravity(enum.Enum):
+    """
+    Enumeration representing photo gravity options.
+    """
     FACES = "faces"
     AUTO = "auto"
     CENTER = "center"
@@ -34,6 +46,9 @@ class PhotoGravity(enum.Enum):
 
 
 class QrModuleDrawer(enum.Enum):
+    """
+    Enumeration representing QR module drawer types.
+    """
     ROUNDED = "RoundedModuleDrawer"
     CIRCLE = "CircleModuleDrawer"
     SQUARE = "SquareModuleDrawer"
@@ -43,6 +58,9 @@ class QrModuleDrawer(enum.Enum):
 
 
 class QrColorMask(enum.Enum):
+    """
+    Enumeration representing QR color mask types.
+    """
     RADIAL = "RadialGradiantColorMask"
     SQUARE = "SquareGradiantColorMask"
     HORIZONTAL = "HorizontalGradiantColorMask"
